@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity } from 'react-native';
 import { api } from '../services/api';
 import { ScreenBackground } from '../components/ScreenBackground';
 import { GlassView } from '../components/GlassView';
@@ -160,9 +160,34 @@ export const LoginScreen = ({ navigation }: { navigation: any }) => {
 
                         <View style={styles.hintBox}>
                             <Text style={styles.hintTitle}>Credentials Hint:</Text>
-                            <Text style={styles.hintText}>std_0@university.edu | staff_0@university.edu</Text>
-                            <Text style={styles.hintText}>admin@university.edu | guest_test@university.edu</Text>
-                            <Text style={styles.hintText}>Password: password</Text>
+                            <Text style={styles.hintText}>Password for all: 'password'</Text>
+
+                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+                                <TouchableOpacity
+                                    onPress={() => { setEmail('admin@university.edu'); setPassword('password'); }}
+                                    style={styles.quickBtn}
+                                >
+                                    <Text style={styles.quickBtnText}>Fill Admin</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={() => { setEmail('std_0@university.edu'); setPassword('password'); }}
+                                    style={styles.quickBtn}
+                                >
+                                    <Text style={styles.quickBtnText}>Fill Student</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={() => { setEmail('staff_0@university.edu'); setPassword('password'); }}
+                                    style={styles.quickBtn}
+                                >
+                                    <Text style={styles.quickBtnText}>Fill Staff</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={() => { setEmail('cashier@university.edu'); setPassword('password'); }}
+                                    style={styles.quickBtn}
+                                >
+                                    <Text style={styles.quickBtnText}>Fill Cashier</Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
                     </GlassView>
                 </ScrollView>
@@ -236,5 +261,7 @@ const styles = StyleSheet.create({
         borderRadius: theme.borderRadius.md
     },
     hintTitle: { color: theme.colors.accent, fontSize: 12, fontWeight: 'bold', marginBottom: 4 },
-    hintText: { color: theme.colors.textMuted, fontSize: 11, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }
+    hintText: { color: theme.colors.textMuted, fontSize: 11, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+    quickBtn: { backgroundColor: 'rgba(255,255,255,0.1)', padding: 6, borderRadius: 4, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
+    quickBtnText: { color: theme.colors.accent, fontSize: 10, fontWeight: 'bold' }
 });

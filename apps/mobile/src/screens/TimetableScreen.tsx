@@ -11,6 +11,9 @@ export function TimetableScreen({ navigation }) {
     const [mode, setMode] = useState<'MY' | 'SEARCH'>('MY');
     const [searchDept, setSearchDept] = useState('CE');
     const [searchLevel, setSearchLevel] = useState(200);
+    const [selectedDay, setSelectedDay] = useState(new Date().getDay());
+    const [events, setEvents] = useState<any[]>([]);
+    const [loading, setLoading] = useState(false);
 
     const DEPARTMENTS = ['CE', 'EE', 'ME', 'CV', 'SE'];
     const LEVELS = [200, 300, 400, 500];
