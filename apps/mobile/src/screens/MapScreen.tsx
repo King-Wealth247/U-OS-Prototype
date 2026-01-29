@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Dimensions, Platform } from 'react-native';
-import MapView, { PROVIDER_GOOGLE, Marker, Polyline } from 'react-native-maps';
+import MapView, { PROVIDER_GOOGLE, Marker, Polyline } from '../components/NativeMap';
 import * as Location from 'expo-location';
 import { useCampus } from '../context/CampusContext';
 import { theme } from '../theme';

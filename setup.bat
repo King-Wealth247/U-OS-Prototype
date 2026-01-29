@@ -35,13 +35,13 @@ if %ERRORLEVEL% EQU 0 (
 if %FULL_SETUP% EQU 1 (
     echo [2/4] Full Setup - Regenerating Database...
     echo    ^> Generating Prisma Client...
-    call npm run db:generate --workspace=@u-os/database
+    call npm run generate --workspace=@u-os/database
     
     echo    ^> Pushing schema to database...
     call npm run db:push --workspace=@u-os/database
     
     echo    ^> Seeding database...
-    call npm run db:seed --workspace=@u-os/database
+    call npm run seed --workspace=@u-os/database
 ) else (
     echo [2/4] Database Schema Check...
     echo    ^> Using existing database - SKIP
@@ -90,9 +90,19 @@ echo   - Press 'w' in mobile window to open web browser
 echo   - Backend will auto-reload on code changes
 echo   - Mobile will hot-reload (no cache clear needed)
 echo.
+echo.
 echo OPTIONS:
 echo   setup.bat          - Quick start (skip if already running)
 echo   setup.bat --full   - Full reset (clear cache + reset database)
+echo.
+
+:prisma_check
+set /p RUN_PRISMA="Run Prisma Studio (Visual DB Editor)? (y/n): "
+if /i "%RUN_PRISMA%"=="y" (
+    echo    ^> Starting Prisma Studio...
+    start "Prisma Studio" cmd /k "cd packages\database && npx prisma studio"
+)
+
 echo.
 pause
 

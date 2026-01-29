@@ -12,12 +12,24 @@ export class AuthService {
     ) { }
 
     async validateUser(email: string, pass: string): Promise<any> {
+        console.log(`Auth Debug: Attempting login for ${email}`);
+        console.log(`Auth Debug: Received password: '${pass}' (Length: ${pass?.length})`);
+
         const user = await this.prisma.user.findUnique({
             where: { institutionalEmail: email },
         });
 
+        if (!user) {
+            console.log('Auth Debug: User NOT FOUND');
+            return null;
+        }
+
+        console.log(`Auth Debug: User found (ID: ${user.id}). Checking password...`);
+        console.log(`Auth Debug: Stored hash starts with: ${user.password.substring(0, 10)}...`);
+
         if (user && user.password) {
             const isMatch = await bcrypt.compare(pass, user.password);
+            console.log(`Auth Debug: Password Match Result: ${isMatch}`);
             if (isMatch) {
                 const { password, ...result } = user;
                 return result;

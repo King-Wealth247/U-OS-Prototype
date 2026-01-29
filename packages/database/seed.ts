@@ -68,17 +68,97 @@ async function main() {
     }
     console.log(`Created ~120 buildings and ${rooms.length} rooms.`);
 
-    // 3. Create Users (Students)
-    const TOTAL_STUDENTS = 65000;
-    console.log('Seeding students... (simulated batch)');
+    // 3. Create Departments & Courses
+    console.log('Seeding Departments & Courses...');
+    const DEPARTMENTS = [
+        { slug: 'CE', name: 'Computer Engineering' },
+        { slug: 'EE', name: 'Electrical Engineering' },
+        { slug: 'ME', name: 'Mechanical Engineering' },
+        { slug: 'CV', name: 'Civil Engineering' },
+        { slug: 'SE', name: 'Software Engineering' },
+    ];
 
-    const sampleStudentCount = 100;
-    for (let i = 0; i < sampleStudentCount; i++) {
-        const campus = faker.helpers.arrayElement(campuses);
+    const LEVELS = [200, 300, 400, 500];
+    const courses = [];
+
+    for (const dept of DEPARTMENTS) {
+        await prisma.department.upsert({
+            where: { slug: dept.slug },
+            update: {},
+            create: { slug: dept.slug, name: dept.name }
+        });
+
+        // Create Courses for this Dept
+        for (const level of LEVELS) {
+            for (let i = 1; i <= 3; i++) {
+                const courseCode = `${dept.slug}${level}0${i}`;
+                const c = await prisma.course.upsert({
+                    where: { code: courseCode },
+                    update: {},
+                    create: {
+                        code: courseCode,
+                        title: `${dept.name} Topic ${level}-${i}`,
+                        credits: 6,
+                        departmentSlug: dept.slug,
+                    }
+                });
+                courses.push(c);
+            }
+        }
+    }
+
+    // 4. Create Staff (Lecturers)
+    console.log('Seeding Staff...');
+    const lecturers = [];
+    const STAFF_COUNT = 50;
+
+    for (let i = 0; i < STAFF_COUNT; i++) {
+        const email = `staff_${i}@university.edu`;
+        const dept = faker.helpers.arrayElement(DEPARTMENTS);
+
+        // Ensure user - Force update password
+        const user = await prisma.user.upsert({
+            where: { institutionalEmail: email },
+            update: { password: HASHED_PASSWORD },
+            create: {
+                role: Role.LECTURER,
+                campusIdHome: campuses[0].id,
+                institutionalEmail: email,
+                fullName: `Dr. ${faker.person.lastName()} (${dept.slug})`,
+                isActive: true,
+                password: HASHED_PASSWORD,
+            }
+        });
+
+        // Ensure Staff Record
+        await prisma.staffMember.upsert({
+            where: { userId: user.id },
+            update: {}, // Keep existing details if there
+            create: {
+                userId: user.id,
+                position: 'LECTURER',
+                departmentId: dept.slug,
+                salary: faker.number.int({ min: 2000, max: 5000 }),
+                hireDate: faker.date.past(),
+            }
+        });
+        lecturers.push(user);
+    }
+
+    // 5. Create Students
+    const STUDENT_COUNT = 2500;
+    console.log(`Seeding ${STUDENT_COUNT} students... this may take a moment.`);
+
+    // Using upsert loop to ensure passwords are corrected for everyone
+    for (let i = 0; i < STUDENT_COUNT; i++) {
         const email = `std_${i}@university.edu`;
+        const campus = faker.helpers.arrayElement(campuses);
+        const dept = faker.helpers.arrayElement(DEPARTMENTS);
+        const level = faker.helpers.arrayElement(LEVELS);
+
         await prisma.user.upsert({
             where: { institutionalEmail: email },
-            update: {},
+            update: { password: HASHED_PASSWORD }, // FORCE PASSWORD FIX
             create: {
                 role: Role.STUDENT,
                 campusIdHome: campus.id,
@@ -86,35 +166,26 @@ async function main() {
                 fullName: faker.person.fullName(),
                 isActive: true,
                 password: HASHED_PASSWORD,
+                enrollments: {
+                    create: {
+                        departmentSlug: dept.slug,
+                        programSlug: 'B.Eng',
+                        level: level,
+                        academicYear: '2023/2024'
+                    }
+                }
             }
         });
-    }
 
-    // 4. Create Staff (Lecturers)
-    const lecturers = [];
-    const sampleStaffCount = 50;
-    for (let i = 0; i < sampleStaffCount; i++) {
-        const email = `staff_${i}@university.edu`;
-        const l = await prisma.user.upsert({
-            where: { institutionalEmail: email },
-            update: {},
-            create: {
-                role: Role.LECTURER,
-                campusIdHome: campuses[0].id,
-                institutionalEmail: email,
-                fullName: `Dr. ${faker.person.lastName()}`,
-                isActive: true,
-                password: HASHED_PASSWORD,
-            }
-        });
-        lecturers.push(l);
+        if (i % 100 === 0) process.stdout.write('.');
     }
+    console.log('\nStudents seeded.');
 
-    // 5. Create Admins & Guest
+    // 6. Create Admins & Guest
     console.log('Seeding admins and guests...');
     await prisma.user.upsert({
         where: { institutionalEmail: 'admin@university.edu' },
-        update: {},
+        update: { password: HASHED_PASSWORD },
         create: {
             role: Role.SUPER_ADMIN,
             campusIdHome: campuses[0].id,
@@ -127,7 +198,7 @@ async function main() {
 
     await prisma.user.upsert({
         where: { institutionalEmail: 'campus_b_admin@university.edu' },
-        update: {},
+        update: { password: HASHED_PASSWORD },
         create: {
             role: Role.CAMPUS_ADMIN,
             campusIdHome: campuses[1].id,
@@ -140,7 +211,7 @@ async function main() {
 
     await prisma.user.upsert({
         where: { institutionalEmail: 'guest_test@university.edu' },
-        update: {},
+        update: { password: HASHED_PASSWORD },
         create: {
             role: Role.GUEST,
             campusIdHome: campuses[0].id,
@@ -154,7 +225,7 @@ async function main() {
     // Cashier
     await prisma.user.upsert({
         where: { institutionalEmail: 'cashier@university.edu' },
-        update: {},
+        update: { password: HASHED_PASSWORD },
         create: {
             role: Role.CASHIER,
             campusIdHome: campuses[0].id,
@@ -165,42 +236,31 @@ async function main() {
         }
     });
 
-    // 6. Timetable Events
+    // 7. Timetable Events
     console.log('Seeding timetable events...');
-    // Create some dummy courses
-    const course = await prisma.course.upsert({
-        where: { code: 'CSC301' },
-        update: {},
-        create: {
-            code: 'CSC301',
-            title: 'Advanced Operating Systems',
-            credits: 6,
-            department: {
-                connectOrCreate: {
-                    where: { slug: 'csc' },
-                    create: { slug: 'csc', name: 'Computer Science' }
-                }
-            }
-        }
-    });
-
-    // Schedule event
-    // Find a room
+    // Create random schedule
     const room = await prisma.room.findFirst();
-    if (room && lecturers.length > 0) {
-        await prisma.timetableEvent.create({
-            data: {
-                courseId: course.id,
-                roomId: room.id,
-                weekday: 1, // Mon
-                startTime: new Date('2024-01-01T08:00:00Z'),
-                endTime: new Date('2024-01-01T10:00:00Z'),
-                recurrencePattern: RecurrencePattern.WEEKLY,
-                lecturers: {
-                    connect: { id: lecturers[0].id }
+    if (room && lecturers.length > 0 && courses.length > 0) {
+        // Create 50 events
+        for (let k = 0; k < 50; k++) {
+            const c = faker.helpers.arrayElement(courses);
+            const l = faker.helpers.arrayElement(lecturers);
+
+            const startHour = faker.number.int({ min: 8, max: 16 });
+            const endHour = faker.number.int({ min: 17, max: 19 });
+
+            await prisma.timetableEvent.create({
+                data: {
+                    courseId: c.id,
+                    roomId: room.id,
+                    weekday: faker.number.int({ min: 0, max: 6 }),
+                    startTime: new Date(`2024-01-01T${startHour.toString().padStart(2, '0')}:00:00Z`),
+                    endTime: new Date(`2024-01-01T${endHour.toString().padStart(2, '0')}:00:00Z`),
+                    recurrencePattern: RecurrencePattern.WEEKLY,
+                    lecturers: { connect: { id: l.id } }
                 }
-            }
-        });
+            });
+        }
     }
 
     console.log('Seed complete.');
