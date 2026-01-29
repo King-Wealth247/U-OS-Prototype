@@ -63,6 +63,32 @@ export const api = {
             const token = await AsyncStorage.getItem('jwt_token');
             const userStr = await AsyncStorage.getItem('user_data');
             return { token, user: userStr ? JSON.parse(userStr) : null };
+        },
+        changePassword: async (newPassword: string) => {
+            const response = await fetch(`${API_URL}/auth/change-password`, {
+                method: 'PATCH',
+                headers: await getHeaders(),
+                body: JSON.stringify({ newPassword }),
+            });
+            if (!response.ok) throw new Error('Failed to update password');
+            return await response.json();
+        },
+        updateProfile: async (data: { recoveryEmail?: string; phone?: string }) => {
+            const response = await fetch(`${API_URL}/auth/update-profile`, {
+                method: 'PATCH',
+                headers: await getHeaders(),
+                body: JSON.stringify(data),
+            });
+            if (!response.ok) throw new Error('Failed to update profile');
+            const result = await response.json();
+            // Update local storage if successful
+            const userStr = await AsyncStorage.getItem('user_data');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                const updatedUser = { ...user, ...data };
+                await AsyncStorage.setItem('user_data', JSON.stringify(updatedUser));
+            }
+            return result;
         }
     },
     events: {
@@ -157,6 +183,14 @@ export const api = {
             if (!response.ok) throw new Error('Failed to update status');
             return await response.json();
         },
+        deleteStaff: async (id: string) => {
+            const response = await fetch(`${API_URL}/admin/staff/${id}`, {
+                method: 'DELETE',
+                headers: await getHeaders(),
+            });
+            if (!response.ok) throw new Error('Failed to delete staff');
+            return await response.json();
+        },
         getAdmins: async () => {
             const response = await fetch(`${API_URL}/admin/admins`, {
                 method: 'GET',
@@ -187,6 +221,18 @@ export const api = {
                 headers: await getHeaders(),
             });
             if (!response.ok) throw new Error('Failed to fetch students');
+            return await response.json();
+        },
+        createUser: async (data: any) => {
+            const response = await fetch(`${API_URL}/admin/users`, {
+                method: 'POST',
+                headers: await getHeaders(),
+                body: JSON.stringify(data),
+            });
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({ message: 'User creation failed' }));
+                throw new Error(error.message || `HTTP ${response.status}`);
+            }
             return await response.json();
         }
     },

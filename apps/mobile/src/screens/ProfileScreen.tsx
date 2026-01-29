@@ -9,8 +9,11 @@ import {
     Alert,
     ActivityIndicator,
     Modal,
+    KeyboardAvoidingView,
+    Platform,
 } from 'react-native';
 import { ScreenBackground } from '../components/ScreenBackground';
+import { api } from '../services/api';
 
 export const ProfileScreen = ({ navigation, route }: { navigation: any; route: any }) => {
     const user = route.params?.user;
@@ -36,7 +39,7 @@ export const ProfileScreen = ({ navigation, route }: { navigation: any; route: a
     const [requestReason, setRequestReason] = useState('');
     const [requestNewValue, setRequestNewValue] = useState('');
 
-    const handleSaveRecoveryEmail = () => {
+    const handleSaveRecoveryEmail = async () => {
         // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(recoveryEmail)) {
@@ -44,12 +47,16 @@ export const ProfileScreen = ({ navigation, route }: { navigation: any; route: a
             return;
         }
 
-        // Call API to update recovery email
-        Alert.alert('Success', 'Recovery email updated successfully');
-        setEditingRecoveryEmail(false);
+        try {
+            await api.auth.updateProfile({ recoveryEmail });
+            Alert.alert('Success', 'Recovery email updated successfully');
+            setEditingRecoveryEmail(false);
+        } catch (error: any) {
+            Alert.alert('Error', error.message || 'Failed to update recovery email');
+        }
     };
 
-    const handleChangePassword = () => {
+    const handleChangePassword = async () => {
         if (newPassword.length < 6) {
             Alert.alert('Error', 'Password must be at least 6 characters');
             return;
@@ -60,11 +67,15 @@ export const ProfileScreen = ({ navigation, route }: { navigation: any; route: a
             return;
         }
 
-        // Call API to change password
-        Alert.alert('Success', 'Password changed successfully');
-        setShowPasswordModal(false);
-        setNewPassword('');
-        setConfirmPassword('');
+        try {
+            await api.auth.changePassword(newPassword);
+            Alert.alert('Success', 'Password changed successfully');
+            setShowPasswordModal(false);
+            setNewPassword('');
+            setConfirmPassword('');
+        } catch (error: any) {
+            Alert.alert('Error', error.message || 'Failed to change password');
+        }
     };
 
     const handleRequestChange = () => {
@@ -84,243 +95,252 @@ export const ProfileScreen = ({ navigation, route }: { navigation: any; route: a
     };
 
     return (
-        <ScrollView style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>👤 My Profile</Text>
-                <Text style={styles.headerSubtitle}>Manage your account settings</Text>
-            </View>
+        <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={{ flex: 1 }}
+        >
+            <ScrollView
+                style={styles.container}
+                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled"
+            >
+                <View style={styles.header}>
+                    <Text style={styles.headerTitle}>👤 My Profile</Text>
+                    <Text style={styles.headerSubtitle}>Manage your account settings</Text>
+                </View>
 
-            {/* Immutable Fields */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Personal Information</Text>
+                {/* Immutable Fields */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Personal Information</Text>
 
-                <View style={styles.field}>
-                    <Text style={styles.label}>Full Name</Text>
-                    <View style={styles.lockedField}>
-                        <Text style={styles.lockedValue}>{user.fullName}</Text>
-                        <Text style={styles.lockIcon}>🔒</Text>
+                    <View style={styles.field}>
+                        <Text style={styles.label}>Full Name</Text>
+                        <View style={styles.lockedField}>
+                            <Text style={styles.lockedValue}>{user.fullName}</Text>
+                            <Text style={styles.lockIcon}>🔒</Text>
+                        </View>
+                        <TouchableOpacity
+                            style={styles.requestButton}
+                            onPress={() => {
+                                setChangeRequestType('NAME');
+                                setShowChangeRequestModal(true);
+                            }}>
+                            <Text style={styles.requestButtonText}>Request Name Change</Text>
+                        </TouchableOpacity>
                     </View>
+
+                    {user.role === 'STUDENT' && (
+                        <View style={styles.field}>
+                            <Text style={styles.label}>School Email (Institutional)</Text>
+                            <View style={styles.lockedField}>
+                                <Text style={styles.lockedValue}>{user.institutionalEmail}</Text>
+                                <Text style={styles.lockIcon}>🔒</Text>
+                            </View>
+                            <Text style={styles.helpText}>
+                                Your school email cannot be changed
+                            </Text>
+                        </View>
+                    )}
+
+                    <View style={styles.field}>
+                        <Text style={styles.label}>Role</Text>
+                        <Text style={styles.value}>{user.role}</Text>
+                    </View>
+                </View>
+
+                {/* Editable Fields */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Contact Information (Editable)</Text>
+
+                    <View style={styles.field}>
+                        <Text style={styles.label}>Recovery Email (Personal) ✏️</Text>
+                        {editingRecoveryEmail ? (
+                            <>
+                                <TextInput
+                                    style={styles.input}
+                                    value={recoveryEmail}
+                                    onChangeText={setRecoveryEmail}
+                                    keyboardType="email-address"
+                                    autoCapitalize="none"
+                                    placeholder="your.email@example.com"
+                                />
+                                <View style={styles.buttonRow}>
+                                    <TouchableOpacity
+                                        style={[styles.button, styles.cancelButton]}
+                                        onPress={() => {
+                                            setRecoveryEmail(user.personalEmail);
+                                            setEditingRecoveryEmail(false);
+                                        }}>
+                                        <Text style={styles.buttonText}>Cancel</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[styles.button, styles.saveButton]}
+                                        onPress={handleSaveRecoveryEmail}>
+                                        <Text style={styles.buttonTextPrimary}>Save</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </>
+                        ) : (
+                            <>
+                                <Text style={styles.value}>{recoveryEmail}</Text>
+                                <TouchableOpacity
+                                    style={styles.editButton}
+                                    onPress={() => setEditingRecoveryEmail(true)}>
+                                    <Text style={styles.editButtonText}>Edit Recovery Email</Text>
+                                </TouchableOpacity>
+                            </>
+                        )}
+                        <Text style={styles.helpText}>
+                            Used for password resets and important notifications
+                        </Text>
+                    </View>
+                </View>
+
+                {/* Security */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Security</Text>
+
                     <TouchableOpacity
-                        style={styles.requestButton}
-                        onPress={() => {
-                            setChangeRequestType('NAME');
-                            setShowChangeRequestModal(true);
-                        }}>
-                        <Text style={styles.requestButtonText}>Request Name Change</Text>
+                        style={styles.primaryAction}
+                        onPress={() => setShowPasswordModal(true)}>
+                        <Text style={styles.primaryActionText}>🔐 Change Password</Text>
                     </TouchableOpacity>
                 </View>
 
-                {user.role === 'STUDENT' && (
-                    <View style={styles.field}>
-                        <Text style={styles.label}>School Email (Institutional)</Text>
-                        <View style={styles.lockedField}>
-                            <Text style={styles.lockedValue}>{user.institutionalEmail}</Text>
-                            <Text style={styles.lockIcon}>🔒</Text>
-                        </View>
-                        <Text style={styles.helpText}>
-                            Your school email cannot be changed
-                        </Text>
-                    </View>
-                )}
-
-                <View style={styles.field}>
-                    <Text style={styles.label}>Role</Text>
-                    <Text style={styles.value}>{user.role}</Text>
+                {/* Logout */}
+                <View style={[styles.section, { marginBottom: 40, backgroundColor: 'transparent', padding: 0 }]}>
+                    <TouchableOpacity
+                        style={styles.logoutButton}
+                        onPress={() => {
+                            Alert.alert(
+                                "Log Out",
+                                "Are you sure you want to log out?",
+                                [
+                                    { text: "Cancel", style: "cancel" },
+                                    {
+                                        text: "Log Out",
+                                        style: "destructive",
+                                        onPress: async () => {
+                                            const { api } = require('../services/api');
+                                            await api.auth.logout();
+                                            // Reset navigation to Login
+                                            navigation.reset({
+                                                index: 0,
+                                                routes: [{ name: 'Login' }],
+                                            });
+                                        }
+                                    }
+                                ]
+                            );
+                        }}>
+                        <Text style={styles.logoutButtonText}>🚪 Log Out</Text>
+                    </TouchableOpacity>
                 </View>
-            </View>
 
-            {/* Editable Fields */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Contact Information (Editable)</Text>
+                {/* Password Change Modal */}
+                <Modal
+                    visible={showPasswordModal}
+                    animationType="slide"
+                    transparent={true}>
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.modalContent}>
+                            <Text style={styles.modalTitle}>Change Password</Text>
 
-                <View style={styles.field}>
-                    <Text style={styles.label}>Recovery Email (Personal) ✏️</Text>
-                    {editingRecoveryEmail ? (
-                        <>
                             <TextInput
                                 style={styles.input}
-                                value={recoveryEmail}
-                                onChangeText={setRecoveryEmail}
-                                keyboardType="email-address"
-                                autoCapitalize="none"
-                                placeholder="your.email@example.com"
+                                placeholder="New Password (min 6 characters)"
+                                secureTextEntry
+                                value={newPassword}
+                                onChangeText={setNewPassword}
                             />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Confirm New Password"
+                                secureTextEntry
+                                value={confirmPassword}
+                                onChangeText={setConfirmPassword}
+                            />
+
                             <View style={styles.buttonRow}>
                                 <TouchableOpacity
                                     style={[styles.button, styles.cancelButton]}
                                     onPress={() => {
-                                        setRecoveryEmail(user.personalEmail);
-                                        setEditingRecoveryEmail(false);
+                                        setShowPasswordModal(false);
+                                        setNewPassword('');
+                                        setConfirmPassword('');
                                     }}>
                                     <Text style={styles.buttonText}>Cancel</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     style={[styles.button, styles.saveButton]}
-                                    onPress={handleSaveRecoveryEmail}>
-                                    <Text style={styles.buttonTextPrimary}>Save</Text>
+                                    onPress={handleChangePassword}>
+                                    <Text style={styles.buttonTextPrimary}>Change</Text>
                                 </TouchableOpacity>
                             </View>
-                        </>
-                    ) : (
-                        <>
-                            <Text style={styles.value}>{recoveryEmail}</Text>
-                            <TouchableOpacity
-                                style={styles.editButton}
-                                onPress={() => setEditingRecoveryEmail(true)}>
-                                <Text style={styles.editButtonText}>Edit Recovery Email</Text>
-                            </TouchableOpacity>
-                        </>
-                    )}
-                    <Text style={styles.helpText}>
-                        Used for password resets and important notifications
-                    </Text>
-                </View>
-            </View>
-
-            {/* Security */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Security</Text>
-
-                <TouchableOpacity
-                    style={styles.primaryAction}
-                    onPress={() => setShowPasswordModal(true)}>
-                    <Text style={styles.primaryActionText}>🔐 Change Password</Text>
-                </TouchableOpacity>
-            </View>
-
-            {/* Logout */}
-            <View style={[styles.section, { marginBottom: 40, backgroundColor: 'transparent', padding: 0 }]}>
-                <TouchableOpacity
-                    style={styles.logoutButton}
-                    onPress={() => {
-                        Alert.alert(
-                            "Log Out",
-                            "Are you sure you want to log out?",
-                            [
-                                { text: "Cancel", style: "cancel" },
-                                {
-                                    text: "Log Out",
-                                    style: "destructive",
-                                    onPress: async () => {
-                                        const { api } = require('../services/api');
-                                        await api.auth.logout();
-                                        // Reset navigation to Login
-                                        navigation.reset({
-                                            index: 0,
-                                            routes: [{ name: 'Login' }],
-                                        });
-                                    }
-                                }
-                            ]
-                        );
-                    }}>
-                    <Text style={styles.logoutButtonText}>🚪 Log Out</Text>
-                </TouchableOpacity>
-            </View>
-
-            {/* Password Change Modal */}
-            <Modal
-                visible={showPasswordModal}
-                animationType="slide"
-                transparent={true}>
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Change Password</Text>
-
-                        <TextInput
-                            style={styles.input}
-                            placeholder="New Password (min 6 characters)"
-                            secureTextEntry
-                            value={newPassword}
-                            onChangeText={setNewPassword}
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Confirm New Password"
-                            secureTextEntry
-                            value={confirmPassword}
-                            onChangeText={setConfirmPassword}
-                        />
-
-                        <View style={styles.buttonRow}>
-                            <TouchableOpacity
-                                style={[styles.button, styles.cancelButton]}
-                                onPress={() => {
-                                    setShowPasswordModal(false);
-                                    setNewPassword('');
-                                    setConfirmPassword('');
-                                }}>
-                                <Text style={styles.buttonText}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.button, styles.saveButton]}
-                                onPress={handleChangePassword}>
-                                <Text style={styles.buttonTextPrimary}>Change</Text>
-                            </TouchableOpacity>
                         </View>
                     </View>
-                </View>
-            </Modal>
+                </Modal>
 
-            {/* Change Request Modal */}
-            <Modal
-                visible={showChangeRequestModal}
-                animationType="slide"
-                transparent={true}>
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>
-                            Request {changeRequestType === 'NAME' ? 'Name' : 'Email'} Change
-                        </Text>
-                        <Text style={styles.modalSubtitle}>
-                            This request will be reviewed by an administrator
-                        </Text>
+                {/* Change Request Modal */}
+                <Modal
+                    visible={showChangeRequestModal}
+                    animationType="slide"
+                    transparent={true}>
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.modalContent}>
+                            <Text style={styles.modalTitle}>
+                                Request {changeRequestType === 'NAME' ? 'Name' : 'Email'} Change
+                            </Text>
+                            <Text style={styles.modalSubtitle}>
+                                This request will be reviewed by an administrator
+                            </Text>
 
-                        <Text style={styles.label}>Current Value</Text>
-                        <Text style={styles.lockedValue}>
-                            {changeRequestType === 'NAME'
-                                ? user.fullName
-                                : user.institutionalEmail}
-                        </Text>
+                            <Text style={styles.label}>Current Value</Text>
+                            <Text style={styles.lockedValue}>
+                                {changeRequestType === 'NAME'
+                                    ? user.fullName
+                                    : user.institutionalEmail}
+                            </Text>
 
-                        <Text style={styles.label}>New Value</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder={`Enter new ${changeRequestType === 'NAME' ? 'name' : 'email'}`}
-                            value={requestNewValue}
-                            onChangeText={setRequestNewValue}
-                        />
+                            <Text style={styles.label}>New Value</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder={`Enter new ${changeRequestType === 'NAME' ? 'name' : 'email'}`}
+                                value={requestNewValue}
+                                onChangeText={setRequestNewValue}
+                            />
 
-                        <Text style={styles.label}>Reason for Change</Text>
-                        <TextInput
-                            style={[styles.input, styles.textArea]}
-                            placeholder="Explain why this change is needed..."
-                            multiline
-                            numberOfLines={3}
-                            value={requestReason}
-                            onChangeText={setRequestReason}
-                        />
+                            <Text style={styles.label}>Reason for Change</Text>
+                            <TextInput
+                                style={[styles.input, styles.textArea]}
+                                placeholder="Explain why this change is needed..."
+                                multiline
+                                numberOfLines={3}
+                                value={requestReason}
+                                onChangeText={setRequestReason}
+                            />
 
-                        <View style={styles.buttonRow}>
-                            <TouchableOpacity
-                                style={[styles.button, styles.cancelButton]}
-                                onPress={() => {
-                                    setShowChangeRequestModal(false);
-                                    setRequestNewValue('');
-                                    setRequestReason('');
-                                }}>
-                                <Text style={styles.buttonText}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.button, styles.saveButton]}
-                                onPress={handleRequestChange}>
-                                <Text style={styles.buttonTextPrimary}>Submit Request</Text>
-                            </TouchableOpacity>
+                            <View style={styles.buttonRow}>
+                                <TouchableOpacity
+                                    style={[styles.button, styles.cancelButton]}
+                                    onPress={() => {
+                                        setShowChangeRequestModal(false);
+                                        setRequestNewValue('');
+                                        setRequestReason('');
+                                    }}>
+                                    <Text style={styles.buttonText}>Cancel</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.button, styles.saveButton]}
+                                    onPress={handleRequestChange}>
+                                    <Text style={styles.buttonTextPrimary}>Submit Request</Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
                     </View>
-                </View>
-            </Modal>
-        </ScrollView>
+                </Modal>
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
 };
 
@@ -328,6 +348,9 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f5f5f5',
+    },
+    scrollContent: {
+        paddingBottom: 60,
     },
     header: {
         backgroundColor: '#007AFF',

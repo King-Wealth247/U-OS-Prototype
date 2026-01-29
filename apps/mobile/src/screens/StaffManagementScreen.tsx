@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { api } from '../services/api';
 
 const POSITIONS = [
@@ -9,17 +9,20 @@ const POSITIONS = [
 ];
 
 export function StaffManagementScreen() {
-    const [staff, setStaff] = useState([]);
+    const [staff, setStaff] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [modalVisible, setModalVisible] = useState(false);
 
     // Form State
+    const [fullName, setFullName] = useState('');
+    const [personalEmail, setPersonalEmail] = useState('');
+    const [phone, setPhone] = useState('');
     const [email, setEmail] = useState('');
     const [position, setPosition] = useState('LECTURER');
     const [department, setDepartment] = useState('');
     const [salary, setSalary] = useState('');
 
-    const [departments, setDepartments] = useState([]);
+    const [departments, setDepartments] = useState<any[]>([]);
 
     const loadStaff = async () => {
         try {
@@ -48,22 +51,26 @@ export function StaffManagementScreen() {
         }
 
         try {
-            await api.admin.createStaff({
-                email,
-                position,
+            await api.admin.createUser({
+                fullName,
+                institutionalEmail: email,
+                personalEmail: personalEmail,
+                phoneNumber: phone,
+                role: position === 'IT_ADMIN' || position === 'VICE_CHANCELLOR' ? 'CAMPUS_ADMIN' : 'LECTURER',
                 departmentId: department,
+                position,
                 salary: parseFloat(salary)
             });
             setModalVisible(false);
             resetForm();
             loadStaff();
-            Alert.alert('Success', 'Staff member added');
-        } catch (error) {
-            Alert.alert('Error', 'Failed to add staff. Ensure user exists.');
+            Alert.alert('Success', 'Staff member created and notified');
+        } catch (error: any) {
+            Alert.alert('Error', 'Failed to create staff: ' + (error.message || 'Unknown error'));
         }
     };
 
-    const handleDelete = (id) => {
+    const handleDelete = (id: string) => {
         Alert.alert('Confirm Delete', 'Are you sure you want to remove this staff member?', [
             { text: 'Cancel', style: 'cancel' },
             {
@@ -82,13 +89,16 @@ export function StaffManagementScreen() {
     };
 
     const resetForm = () => {
+        setFullName('');
+        setPersonalEmail('');
+        setPhone('');
         setEmail('');
         setPosition('LECTURER');
         setDepartment('');
         setSalary('');
     };
 
-    const renderItem = ({ item }) => (
+    const renderItem = ({ item }: { item: any }) => (
         <View style={styles.card}>
             <View style={styles.header}>
                 <Text style={styles.name}>{item.user?.fullName}</Text>
@@ -131,64 +141,96 @@ export function StaffManagementScreen() {
             )}
 
             <Modal visible={modalVisible} animationType="slide">
-                <View style={styles.modalContainer}>
-                    <Text style={styles.modalTitle}>Add Staff Member</Text>
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={{ flex: 1 }}
+                >
+                    <ScrollView
+                        style={styles.modalContainer}
+                        contentContainerStyle={styles.modalScrollContent}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        <Text style={styles.modalTitle}>Add Staff Member</Text>
 
-                    <TextInput
-                        style={styles.input}
-                        placeholder="User Email (must exist)"
-                        value={email}
-                        onChangeText={setEmail}
-                        autoCapitalize="none"
-                    />
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Full Name"
+                            value={fullName}
+                            onChangeText={setFullName}
+                        />
 
-                    <Text style={styles.label}>Position:</Text>
-                    <ScrollView horizontal style={styles.posScroll} showsHorizontalScrollIndicator={false}>
-                        {POSITIONS.map(pos => (
-                            <TouchableOpacity
-                                key={pos}
-                                style={[styles.posOption, position === pos && styles.posSelected]}
-                                onPress={() => setPosition(pos)}
-                            >
-                                <Text style={[styles.posText, position === pos && styles.posTextSelected]}>
-                                    {pos.replace('_', ' ')}
-                                </Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Institutional Email (e.g. john.doe@university.edu)"
+                            value={email}
+                            onChangeText={setEmail}
+                            autoCapitalize="none"
+                        />
+
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Personal Email"
+                            value={personalEmail}
+                            onChangeText={setPersonalEmail}
+                            autoCapitalize="none"
+                        />
+
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Phone Number"
+                            value={phone}
+                            onChangeText={setPhone}
+                            keyboardType="phone-pad"
+                        />
+
+                        <Text style={styles.label}>Position:</Text>
+                        <ScrollView horizontal style={styles.posScroll} showsHorizontalScrollIndicator={false}>
+                            {POSITIONS.map(pos => (
+                                <TouchableOpacity
+                                    key={pos}
+                                    style={[styles.posOption, position === pos && styles.posSelected]}
+                                    onPress={() => setPosition(pos)}
+                                >
+                                    <Text style={[styles.posText, position === pos && styles.posTextSelected]}>
+                                        {pos.replace('_', ' ')}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+
+                        <Text style={styles.label}>Department:</Text>
+                        <ScrollView horizontal style={styles.posScroll} showsHorizontalScrollIndicator={false}>
+                            {departments.map(dept => (
+                                <TouchableOpacity
+                                    key={dept.slug}
+                                    style={[styles.posOption, department === dept.slug && styles.posSelected]}
+                                    onPress={() => setDepartment(dept.slug)}
+                                >
+                                    <Text style={[styles.posText, department === dept.slug && styles.posTextSelected]}>
+                                        {dept.name} ({dept.slug.toUpperCase()})
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Salary"
+                            value={salary}
+                            onChangeText={setSalary}
+                            keyboardType="numeric"
+                        />
+
+                        <View style={styles.modalActions}>
+                            <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
+                                <Text style={styles.cancelText}>Cancel</Text>
                             </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-
-                    <Text style={styles.label}>Department:</Text>
-                    <ScrollView horizontal style={styles.posScroll} showsHorizontalScrollIndicator={false}>
-                        {departments.map(dept => (
-                            <TouchableOpacity
-                                key={dept.slug}
-                                style={[styles.posOption, department === dept.slug && styles.posSelected]}
-                                onPress={() => setDepartment(dept.slug)}
-                            >
-                                <Text style={[styles.posText, department === dept.slug && styles.posTextSelected]}>
-                                    {dept.name} ({dept.slug.toUpperCase()})
-                                </Text>
+                            <TouchableOpacity style={styles.saveBtn} onPress={handleCreate}>
+                                <Text style={styles.saveText}>Save Staff</Text>
                             </TouchableOpacity>
-                        ))}
+                        </View>
                     </ScrollView>
-
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Salary"
-                        value={salary}
-                        onChangeText={setSalary}
-                        keyboardType="numeric"
-                    />
-
-                    <View style={styles.modalActions}>
-                        <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
-                            <Text style={styles.cancelText}>Cancel</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.saveBtn} onPress={handleCreate}>
-                            <Text style={styles.saveText}>Save Staff</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
+                </KeyboardAvoidingView>
             </Modal>
         </View>
     );
@@ -210,7 +252,8 @@ const styles = StyleSheet.create({
     deleteBtn: { marginTop: 15, padding: 10, backgroundColor: '#FFEBEE', borderRadius: 8, alignItems: 'center' },
     deleteText: { color: '#D32F2F', fontWeight: 'bold' },
 
-    modalContainer: { flex: 1, padding: 30, paddingTop: 60, backgroundColor: '#fff' },
+    modalContainer: { flex: 1, backgroundColor: '#fff' },
+    modalScrollContent: { padding: 30, paddingTop: 60, paddingBottom: 40 },
     modalTitle: { fontSize: 24, fontWeight: 'bold', marginBottom: 30 },
     input: { borderWidth: 1, borderColor: '#ddd', padding: 15, borderRadius: 8, marginBottom: 15, fontSize: 16 },
     label: { fontWeight: '600', marginBottom: 10, color: '#666' },

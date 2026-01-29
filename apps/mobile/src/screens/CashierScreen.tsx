@@ -9,7 +9,10 @@ import {
     Alert,
     ActivityIndicator,
     Modal,
+    KeyboardAvoidingView,
+    Platform,
 } from 'react-native';
+import { api } from '../services/api';
 
 export const CashierScreen = ({ navigation }: { navigation: any }) => {
     const [studentName, setStudentName] = useState('');
@@ -56,23 +59,15 @@ export const CashierScreen = ({ navigation }: { navigation: any }) => {
         setLoading(true);
 
         try {
-            // Call cashier endpoint
-            const response = await fetch('http://localhost:3000/cashier/register-payment', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    studentName,
-                    personalEmail,
-                    phoneNumber,
-                    amount: parseFloat(amount),
-                    paymentReference,
-                    campus: 'town-a',
-                }),
+            // Call cashier endpoint using the api service
+            const data = await api.cashier.registerPayment({
+                studentName,
+                personalEmail,
+                phoneNumber,
+                amount: parseFloat(amount),
+                paymentReference,
+                campus: 'town-a',
             });
-
-            const data = await response.json();
 
             if (data.success) {
                 setResult(data.data);
@@ -97,133 +92,142 @@ export const CashierScreen = ({ navigation }: { navigation: any }) => {
     };
 
     return (
-        <ScrollView style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>💰 Cashier Portal</Text>
-                <Text style={styles.headerSubtitle}>Student Payment & Registration</Text>
-            </View>
-
-            {!result ? (
-                <>
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Student Information</Text>
-
-                        <Text style={styles.label}>Full Name *</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="e.g., John Doe"
-                            value={studentName}
-                            onChangeText={setStudentName}
-                        />
-
-                        <Text style={styles.label}>Personal Email *</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="student@example.com"
-                            value={personalEmail}
-                            onChangeText={setPersonalEmail}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                        />
-
-                        <Text style={styles.label}>Phone Number *</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="+237671234567"
-                            value={phoneNumber}
-                            onChangeText={setPhoneNumber}
-                            keyboardType="phone-pad"
-                        />
-                    </View>
-
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Payment Details</Text>
-
-                        <Text style={styles.label}>Amount (FCFA) *</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="250000"
-                            value={amount}
-                            onChangeText={setAmount}
-                            keyboardType="numeric"
-                        />
-
-                        <Text style={styles.label}>Payment Reference *</Text>
-                        <View style={styles.referenceRow}>
-                            <TextInput
-                                style={[styles.input, styles.referenceInput]}
-                                placeholder="PAY123456789"
-                                value={paymentReference}
-                                onChangeText={setPaymentReference}
-                            />
-                            <TouchableOpacity style={styles.generateButton} onPress={generateReference}>
-                                <Text style={styles.generateButtonText}>Generate</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-
-                    <View style={styles.infoBox}>
-                        <Text style={styles.infoTitle}>ℹ️ What happens next?</Text>
-                        <Text style={styles.infoText}>
-                            1. System generates unique matricule (e.g., 2600001){'\n'}
-                            2. Creates institutional email (matricule@university.edu){'\n'}
-                            3. Generates temporary password from student name{'\n'}
-                            4. Sends credentials via Email, SMS & WhatsApp
-                        </Text>
-                    </View>
-
-                    <TouchableOpacity
-                        style={[styles.registerButton, loading && styles.buttonDisabled]}
-                        onPress={handleRegister}
-                        disabled={loading}>
-                        {loading ? (
-                            <ActivityIndicator color="#fff" />
-                        ) : (
-                            <Text style={styles.registerButtonText}>Register & Send Credentials</Text>
-                        )}
-                    </TouchableOpacity>
-                </>
-            ) : (
-                <View style={styles.resultContainer}>
-                    <Text style={styles.resultTitle}>✅ Registration Successful!</Text>
-
-                    <View style={styles.resultCard}>
-                        <Text style={styles.resultLabel}>School Email (Institutional)</Text>
-                        <Text style={styles.resultValue}>{result.user.institutionalEmail}</Text>
-                    </View>
-
-                    <View style={styles.resultCard}>
-                        <Text style={styles.resultLabel}>Matricule Number</Text>
-                        <Text style={styles.resultValue}>{result.user.matricule}</Text>
-                    </View>
-
-                    <View style={styles.resultCard}>
-                        <Text style={styles.resultLabel}>Temporary Password</Text>
-                        <Text style={styles.resultPasswordValue}>{result.temporaryPassword}</Text>
-                        <Text style={styles.resultPasswordHelp}>
-                            ⚠️ Student must change this on first login
-                        </Text>
-                    </View>
-
-                    <View style={styles.notificationStatus}>
-                        <Text style={styles.notificationsTitle}>📬 Notifications Sent:</Text>
-                        <Text style={styles.notificationItem}>
-                            {result.notifications.emailSent ? '✅' : '❌'} Email
-                        </Text>
-                        <Text style={styles.notificationItem}>
-                            {result.notifications.smsSent ? '✅' : '❌'} SMS
-                        </Text>
-                        <Text style={styles.notificationItem}>
-                            {result.notifications.whatsappSent ? '✅' : '❌'} WhatsApp
-                        </Text>
-                    </View>
-
-                    <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
-                        <Text style={styles.resetButtonText}>Register Another Student</Text>
-                    </TouchableOpacity>
+        <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={{ flex: 1 }}
+        >
+            <ScrollView
+                style={styles.container}
+                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled"
+            >
+                <View style={styles.header}>
+                    <Text style={styles.headerTitle}>💰 Cashier Portal</Text>
+                    <Text style={styles.headerSubtitle}>Student Payment & Registration</Text>
                 </View>
-            )}
-        </ScrollView>
+
+                {!result ? (
+                    <>
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>Student Information</Text>
+
+                            <Text style={styles.label}>Full Name *</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="e.g., John Doe"
+                                value={studentName}
+                                onChangeText={setStudentName}
+                            />
+
+                            <Text style={styles.label}>Personal Email *</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="student@example.com"
+                                value={personalEmail}
+                                onChangeText={setPersonalEmail}
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                            />
+
+                            <Text style={styles.label}>Phone Number *</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="+237671234567"
+                                value={phoneNumber}
+                                onChangeText={setPhoneNumber}
+                                keyboardType="phone-pad"
+                            />
+                        </View>
+
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>Payment Details</Text>
+
+                            <Text style={styles.label}>Amount (FCFA) *</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="250000"
+                                value={amount}
+                                onChangeText={setAmount}
+                                keyboardType="numeric"
+                            />
+
+                            <Text style={styles.label}>Payment Reference *</Text>
+                            <View style={styles.referenceRow}>
+                                <TextInput
+                                    style={[styles.input, styles.referenceInput]}
+                                    placeholder="PAY123456789"
+                                    value={paymentReference}
+                                    onChangeText={setPaymentReference}
+                                />
+                                <TouchableOpacity style={styles.generateButton} onPress={generateReference}>
+                                    <Text style={styles.generateButtonText}>Generate</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+
+                        <View style={styles.infoBox}>
+                            <Text style={styles.infoTitle}>ℹ️ What happens next?</Text>
+                            <Text style={styles.infoText}>
+                                1. System generates unique matricule (e.g., 2600001){'\n'}
+                                2. Creates institutional email (matricule@university.edu){'\n'}
+                                3. Generates temporary password from student name{'\n'}
+                                4. Sends credentials via Email, SMS & WhatsApp
+                            </Text>
+                        </View>
+
+                        <TouchableOpacity
+                            style={[styles.registerButton, loading && styles.buttonDisabled]}
+                            onPress={handleRegister}
+                            disabled={loading}>
+                            {loading ? (
+                                <ActivityIndicator color="#fff" />
+                            ) : (
+                                <Text style={styles.registerButtonText}>Register & Send Credentials</Text>
+                            )}
+                        </TouchableOpacity>
+                    </>
+                ) : (
+                    <View style={styles.resultContainer}>
+                        <Text style={styles.resultTitle}>✅ Registration Successful!</Text>
+
+                        <View style={styles.resultCard}>
+                            <Text style={styles.resultLabel}>School Email (Institutional)</Text>
+                            <Text style={styles.resultValue}>{result.user.institutionalEmail}</Text>
+                        </View>
+
+                        <View style={styles.resultCard}>
+                            <Text style={styles.resultLabel}>Matricule Number</Text>
+                            <Text style={styles.resultValue}>{result.user.matricule}</Text>
+                        </View>
+
+                        <View style={styles.resultCard}>
+                            <Text style={styles.resultLabel}>Temporary Password</Text>
+                            <Text style={styles.resultPasswordValue}>{result.temporaryPassword}</Text>
+                            <Text style={styles.resultPasswordHelp}>
+                                ⚠️ Student must change this on first login
+                            </Text>
+                        </View>
+
+                        <View style={styles.notificationStatus}>
+                            <Text style={styles.notificationsTitle}>📬 Notifications Sent:</Text>
+                            <Text style={styles.notificationItem}>
+                                {result.notifications.emailSent ? '✅' : '❌'} Email
+                            </Text>
+                            <Text style={styles.notificationItem}>
+                                {result.notifications.smsSent ? '✅' : '❌'} SMS
+                            </Text>
+                            <Text style={styles.notificationItem}>
+                                {result.notifications.whatsappSent ? '✅' : '❌'} WhatsApp
+                            </Text>
+                        </View>
+
+                        <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
+                            <Text style={styles.resetButtonText}>Register Another Student</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
 };
 
@@ -231,6 +235,9 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f5f5f5',
+    },
+    scrollContent: {
+        paddingBottom: 40,
     },
     header: {
         backgroundColor: '#28a745',

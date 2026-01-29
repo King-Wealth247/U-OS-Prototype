@@ -58,7 +58,7 @@ This project is a **Monorepo** managed by NPM Workspaces.
 | **Mobile App** | **React Native** | 0.76.9 | Cross-platform mobile interface (Expo SDK 52). |
 | **Backend API** | **NestJS** | 10.3.0 | Robust, scalable REST API. |
 | **Database** | **PostgreSQL** | 16 | Relational data engine. |
-| **Geo-Spatial**| **PostGIS** | 3.4 | Advanced mapping & location queries. |
+| **Geo-Spatial** | **PostGIS** | 3.4 | Advanced mapping & location queries. |
 | **ORM** | **Prisma** | 5.7.1 | Type-safe database client & migrations. |
 | **Language** | **TypeScript** | 5.3+ | Strict typing across the entire stack. |
 

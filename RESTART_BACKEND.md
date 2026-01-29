@@ -1,9 +1,10 @@
-# 🚨 CRITICAL: Backend Needs Manual Restart!
+# 🚨 CRITICAL: Backend Needs Manual Restart
 
-## Problem:
+## Problem
+
 Your auth.controller.ts changes **are not applied** yet. The backend is still running the old code that returns `role: "STUDENT"` for everyone.
 
-**Evidence**: Log shows `"role": "STUDENT"` for cashier@university.edu
+**Evidence**: Log shows `"role": "STUDENT"` for `<cashier@university.edu>`
 
 ---
 
@@ -12,6 +13,7 @@ Your auth.controller.ts changes **are not applied** yet. The backend is still ru
 ### Option 1: Kill & Restart (Recommended)
 
 **Step 1**: Stop ALL Node processes
+
 ```powershell
 # In PowerShell:
 Get-Process node | Stop-Process -Force
@@ -25,6 +27,7 @@ npm run start:dev
 ```
 
 **Step 3**: Restart mobile app
+
 ```powershell
 cd ..\mobile
 npx expo start --clear
@@ -47,29 +50,33 @@ If nothing else works, restart your PC. Docker and all Node processes will stop.
 
 ---
 
-## How to Verify It's Fixed:
+## How to Verify It's Fixed
 
 **After restarting, check the backend terminal for**:
-```
+
+```text
 [Nest] INFO [NestFactory] Starting Nest application...
 [Nest] INFO [InstanceLoader] AuthController dependencies initialized
 ```
 
 **Then login as cashier and check console log should show**:
-```
+
+```text
 User logged in: {"role": "CASHIER"}  ✅
 ```
 
-NOT:
-```
-User logged in: {"role": "STUDENT"}  ❌
+**Then login as student and check console log should show**:
+
+```text
+User logged in: {"role": "STUDENT"}  ✅
 ```
 
 ---
 
-## Why This Happened:
+## Why This Happened
 
 NestJS has **hot reload** but sometimes doesn't pick up controller changes, especially:
+
 - Constructor changes (adding PrismaService)
 - Decorator changes (@Injectable)
 - Import changes

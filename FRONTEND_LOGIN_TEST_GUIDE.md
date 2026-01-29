@@ -1,29 +1,33 @@
 # Frontend Login Testing Guide - 100 Student Accounts
 
 ## Overview
+
 This guide provides instructions for testing frontend login functionality with 100 student accounts.
 
 ## Quick Test - First 10 Students
 
 ### Manual Browser Testing
+
 1. **Open your browser** and navigate to: `http://localhost:8081`
 2. **Test these accounts** (copy credentials from table below)
 
 | Account # | Email | Password |
-|-----------|-------|----------|
-| Student 0 | std_0@university.edu | password |
-| Student 1 | std_1@university.edu | password |
-| Student 2 | std_2@university.edu | password |
-| Student 3 | std_3@university.edu | password |
-| Student 4 | std_4@university.edu | password |
-| Student 5 | std_5@university.edu | password |
-| Student 6 | std_6@university.edu | password |
-| Student 7 | std_7@university.edu | password |
-| Student 8 | std_8@university.edu | password |
-| Student 9 | std_9@university.edu | password |
+| :--- | :--- | :--- |
+| Student 0 | `std_0@university.edu` | password |
+| Student 1 | `std_1@university.edu` | password |
+| Student 2 | `std_2@university.edu` | password |
+| Student 3 | `std_3@university.edu` | password |
+| Student 4 | `std_4@university.edu` | password |
+| Student 5 | `std_5@university.edu` | password |
+| Student 6 | `std_6@university.edu` | password |
+| Student 7 | `std_7@university.edu` | password |
+| Student 8 | `std_8@university.edu` | password |
+| Student 9 | `std_9@university.edu` | password |
 
 ### Testing Process
+
 For each account:
+
 1. Enter the email in the email field
 2. Enter `password` in the password field
 3. Click "Login" or press Enter
@@ -38,6 +42,7 @@ For each account:
 Below are all 100 test accounts (std_0 to std_99):
 
 ### Accounts 0-9
+
 - `std_0@university.edu` - password
 - `std_1@university.edu` - password
 - `std_2@university.edu` - password
@@ -50,6 +55,7 @@ Below are all 100 test accounts (std_0 to std_99):
 - `std_9@university.edu` - password
 
 ### Accounts 10-19
+
 - `std_10@university.edu` - password
 - `std_11@university.edu` - password
 - `std_12@university.edu` - password
@@ -62,6 +68,7 @@ Below are all 100 test accounts (std_0 to std_99):
 - `std_19@university.edu` - password
 
 ### Accounts 20-29
+
 - `std_20@university.edu` - password
 - `std_21@university.edu` - password
 - `std_22@university.edu` - password
@@ -74,6 +81,7 @@ Below are all 100 test accounts (std_0 to std_99):
 - `std_29@university.edu` - password
 
 ### Accounts 30-39
+
 - `std_30@university.edu` - password
 - `std_31@university.edu` - password
 - `std_32@university.edu` - password
@@ -86,6 +94,7 @@ Below are all 100 test accounts (std_0 to std_99):
 - `std_39@university.edu` - password
 
 ### Accounts 40-49
+
 - `std_40@university.edu` - password
 - `std_41@university.edu` - password
 - `std_42@university.edu` - password
@@ -98,6 +107,7 @@ Below are all 100 test accounts (std_0 to std_99):
 - `std_49@university.edu` - password
 
 ### Accounts 50-59
+
 - `std_50@university.edu` - password
 - `std_51@university.edu` - password
 - `std_52@university.edu` - password
@@ -110,6 +120,7 @@ Below are all 100 test accounts (std_0 to std_99):
 - `std_59@university.edu` - password
 
 ### Accounts 60-69
+
 - `std_60@university.edu` - password
 - `std_61@university.edu` - password
 - `std_62@university.edu` - password
@@ -122,6 +133,7 @@ Below are all 100 test accounts (std_0 to std_99):
 - `std_69@university.edu` - password
 
 ### Accounts 70-79
+
 - `std_70@university.edu` - password
 - `std_71@university.edu` - password
 - `std_72@university.edu` - password
@@ -134,6 +146,7 @@ Below are all 100 test accounts (std_0 to std_99):
 - `std_79@university.edu` - password
 
 ### Accounts 80-89
+
 - `std_80@university.edu` - password
 - `std_81@university.edu` - password
 - `std_82@university.edu` - password
@@ -146,6 +159,7 @@ Below are all 100 test accounts (std_0 to std_99):
 - `std_89@university.edu` - password
 
 ### Accounts 90-99
+
 - `std_90@university.edu` - password
 - `std_91@university.edu` - password
 - `std_92@university.edu` - password
@@ -162,6 +176,7 @@ Below are all 100 test accounts (std_0 to std_99):
 ## What to Verify
 
 For each successful login, check:
+
 - ✅ Login completes without errors
 - ✅ Student dashboard/home screen appears
 - ✅ Student's name/email is displayed correctly
@@ -173,6 +188,7 @@ For each successful login, check:
 ## Automated Backend Verification (Already Completed)
 
 We've already verified via API testing that:
+
 - ✅ All 50 staff accounts authenticate correctly
 - ✅ ~99% of 2500 student accounts authenticate correctly (2527/2550 success rate)
 - ✅ Password hashing and JWT generation work perfectly
@@ -185,6 +201,7 @@ The backend authentication is solid, so frontend testing is primarily to verify 
 ## Quick Verification Script
 
 If you want to quickly verify some accounts work via the frontend, I recommend:
+
 1. Test **5-10 random accounts** manually
 2. Verify they login successfully
 3. This confirms the frontend is correctly integrated with the backend

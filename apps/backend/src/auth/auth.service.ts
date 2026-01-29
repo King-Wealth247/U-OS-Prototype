@@ -62,4 +62,25 @@ export class AuthService {
             },
         };
     }
+
+    async changePassword(userId: string, newPassword: string) {
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        return this.prisma.user.update({
+            where: { id: userId },
+            data: {
+                password: hashedPassword,
+                passwordChangedAt: new Date(),
+            },
+        });
+    }
+
+    async updateProfile(userId: string, data: { recoveryEmail?: string; phone?: string }) {
+        return this.prisma.user.update({
+            where: { id: userId },
+            data: {
+                recoveryEmail: data.recoveryEmail,
+                phone: data.phone,
+            },
+        });
+    }
 }
