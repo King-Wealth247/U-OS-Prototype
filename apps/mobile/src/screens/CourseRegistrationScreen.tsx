@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { api } from '../services/api';
+import { ScreenBackground } from '../components/ScreenBackground';
+import { GlassView } from '../components/GlassView';
+import { theme } from '../theme';
 
 export function CourseRegistrationScreen({ navigation }) {
     const [courses, setCourses] = useState([]);
@@ -63,14 +66,14 @@ export function CourseRegistrationScreen({ navigation }) {
     );
 
     return (
-        <View style={styles.container}>
+        <ScreenBackground>
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Course Registration</Text>
                 <Text style={styles.subtitle}>Select courses for this semester</Text>
             </View>
 
             {loading ? (
-                <ActivityIndicator size="large" color="#4A90E2" style={{ marginTop: 20 }} />
+                <ActivityIndicator size="large" color={theme.colors.accent} style={{ marginTop: 20 }} />
             ) : (
                 <FlatList
                     data={courses}
@@ -79,9 +82,9 @@ export function CourseRegistrationScreen({ navigation }) {
                     contentContainerStyle={styles.list}
                 />
             )}
-        </View>
+        </ScreenBackground>
     );
-}
+};
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#f5f5f5' },
@@ -89,8 +92,8 @@ const styles = StyleSheet.create({
     headerTitle: { fontSize: 22, fontWeight: 'bold', color: '#333' },
     subtitle: { color: '#666', marginTop: 5 },
 
-    list: { padding: 15 },
-    card: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', padding: 15, borderRadius: 12, marginBottom: 12, elevation: 1 },
+    list: { padding: 15, paddingBottom: 100 },
+    card: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)', padding: 15, borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
     code: { fontSize: 14, fontWeight: 'bold', color: '#888', marginBottom: 2 },
     title: { fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 4 },
     credits: { fontSize: 12, color: '#666' },

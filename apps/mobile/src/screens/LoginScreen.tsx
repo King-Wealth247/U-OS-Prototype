@@ -46,10 +46,11 @@ export const LoginScreen = ({ navigation }: { navigation: any }) => {
             if (res.requiresPasswordChange) {
                 setIsFirstTime(true);
             } else {
-                console.log('User logged in:', res.user);
+                console.log('User logged in successfully:', res.user);
                 navigation.navigate('Home', { user: res.user });
             }
         } catch (e: any) {
+            console.error('Login Error:', e);
             if (e?.response?.status === 404) {
                 setError('❌ Account not found.');
             } else if (e?.response?.status === 401) {

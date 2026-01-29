@@ -83,4 +83,10 @@ export class AdminController {
     async getStudents() {
         return this.adminService.getAllStudents();
     }
+
+    @Post('users')
+    async createUser(@Body() body: any) {
+        // Body: { fullName, institutionalEmail, personalEmail, phoneNumber, role, departmentId, position, salary }
+        return this.adminService.createUser(body);
+    }
 }

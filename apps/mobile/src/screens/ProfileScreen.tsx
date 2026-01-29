@@ -7,18 +7,24 @@ import {
     TextInput,
     TouchableOpacity,
     Alert,
+    ActivityIndicator,
     Modal,
 } from 'react-native';
+import { ScreenBackground } from '../components/ScreenBackground';
 
 export const ProfileScreen = ({ navigation, route }: { navigation: any; route: any }) => {
-    const user = route.params?.user || {
-        id: 'u1',
-        fullName: 'John Doe',
-        institutionalEmail: 'std_0@university.edu',
-        personalEmail: 'john.doe@gmail.com',
-        phone: '+237671234567',
-        role: 'STUDENT',
-    };
+    const user = route.params?.user;
+
+    // Add a check to prevent crash if user is missing, but remove the "John Doe" fallback
+    if (!user) {
+        return (
+            <ScreenBackground>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <Text style={{ color: '#fff' }}>User data not found. Please log in again.</Text>
+                </View>
+            </ScreenBackground>
+        );
+    }
 
     const [editingRecoveryEmail, setEditingRecoveryEmail] = useState(false);
     const [recoveryEmail, setRecoveryEmail] = useState(user.personalEmail || '');

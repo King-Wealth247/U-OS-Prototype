@@ -1,5 +1,5 @@
 import * as bcrypt from 'bcryptjs';
-import { PrismaClient, Role, RoomType, RecurrencePattern } from '@prisma/client';
+import { PrismaClient, Role, RoomType, RecurrencePattern, StaffPosition } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 
 const prisma = new PrismaClient();
@@ -16,7 +16,7 @@ async function main() {
     console.log('Starting massive seed...');
 
     // 1. Create Campuses
-    const campuses = [];
+    const campuses: any[] = [];
     for (const c of CAMPUSES) {
         const campus = await prisma.campus.upsert({
             where: { slug: c.slug },
@@ -33,7 +33,7 @@ async function main() {
     }
 
     // 2. Create Buildings & Rooms
-    const rooms = [];
+    const rooms: any[] = [];
     for (const campus of campuses) {
         const numBuildings = 30; // Approx 120 total
         for (let i = 0; i < numBuildings; i++) {
@@ -79,7 +79,7 @@ async function main() {
     ];
 
     const LEVELS = [200, 300, 400, 500];
-    const courses = [];
+    const courses: any[] = [];
 
     for (const dept of DEPARTMENTS) {
         await prisma.department.upsert({
@@ -109,17 +109,17 @@ async function main() {
 
     // 4. Create Staff (Lecturers)
     console.log('Seeding Staff...');
-    const lecturers = [];
+    const lecturers: any[] = [];
     const STAFF_COUNT = 50;
 
     for (let i = 0; i < STAFF_COUNT; i++) {
         const email = `staff_${i}@university.edu`;
         const dept = faker.helpers.arrayElement(DEPARTMENTS);
 
-        // Ensure user - Force update password
+        // Ensure user - NO PASSWORD UPDATE IF EXIST
         const user = await prisma.user.upsert({
             where: { institutionalEmail: email },
-            update: { password: HASHED_PASSWORD },
+            update: { password: HASHED_PASSWORD }, // OVERWRITE to hashed
             create: {
                 role: Role.LECTURER,
                 campusIdHome: campuses[0].id,
@@ -131,12 +131,22 @@ async function main() {
         });
 
         // Ensure Staff Record
+        // Make random HOD assignment for first few
+        let position: StaffPosition = StaffPosition.LECTURER;
+        // First 5 staff are HODs of the 5 depts respectively? Simpler: Just make random HODs
+        if (i < 5 && i < DEPARTMENTS.length) {
+            position = StaffPosition.HOD;
+            // Link to department i
+            dept.slug = DEPARTMENTS[i].slug;
+            console.log(`   -> Assigned ${email} as HOD of ${dept.slug}`);
+        }
+
         await prisma.staffMember.upsert({
             where: { userId: user.id },
-            update: {}, // Keep existing details if there
+            update: {},
             create: {
                 userId: user.id,
-                position: 'LECTURER',
+                position: position,
                 departmentId: dept.slug,
                 salary: faker.number.int({ min: 2000, max: 5000 }),
                 hireDate: faker.date.past(),
@@ -158,7 +168,7 @@ async function main() {
 
         await prisma.user.upsert({
             where: { institutionalEmail: email },
-            update: { password: HASHED_PASSWORD }, // FORCE PASSWORD FIX
+            update: { password: HASHED_PASSWORD }, // OVERWRITE to hashed
             create: {
                 role: Role.STUDENT,
                 campusIdHome: campus.id,
@@ -246,16 +256,19 @@ async function main() {
             const c = faker.helpers.arrayElement(courses);
             const l = faker.helpers.arrayElement(lecturers);
 
+            // Time fix: ensure proper HH:MM format
             const startHour = faker.number.int({ min: 8, max: 16 });
             const endHour = faker.number.int({ min: 17, max: 19 });
+            const startStr = startHour.toString().padStart(2, '0');
+            const endStr = endHour.toString().padStart(2, '0');
 
             await prisma.timetableEvent.create({
                 data: {
                     courseId: c.id,
                     roomId: room.id,
                     weekday: faker.number.int({ min: 0, max: 6 }),
-                    startTime: new Date(`2024-01-01T${startHour.toString().padStart(2, '0')}:00:00Z`),
-                    endTime: new Date(`2024-01-01T${endHour.toString().padStart(2, '0')}:00:00Z`),
+                    startTime: new Date(`2024-01-01T${startStr}:00:00Z`),
+                    endTime: new Date(`2024-01-01T${endStr}:00:00Z`),
                     recurrencePattern: RecurrencePattern.WEEKLY,
                     lecturers: { connect: { id: l.id } }
                 }

@@ -29,11 +29,16 @@ const getHeaders = async () => {
 export const api = {
     auth: {
         login: async (email: string, password: string) => {
+            console.log(`[API] Attempting login at ${API_URL}/auth/login`);
+            console.log(`[API] Email: ${email}`);
+
             const response = await fetch(`${API_URL}/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password }),
             });
+
+            console.log(`[API] Response status: ${response.status}`);
 
             if (!response.ok) {
                 const error = await response.json().catch(() => ({ message: 'Login failed' }));

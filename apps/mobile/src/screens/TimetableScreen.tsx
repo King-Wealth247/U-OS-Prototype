@@ -181,7 +181,7 @@ export function TimetableScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-    header: { padding: 20, paddingTop: 60, paddingBottom: 10 },
+    header: { padding: 20, paddingBottom: 10 },
     headerTitle: { fontSize: 32, fontWeight: 'bold', color: theme.colors.textPrimary, marginBottom: 15 },
 
     toggleContainer: { flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: 12, padding: 4, marginBottom: 15 },
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     dayText: { fontWeight: '600', color: theme.colors.textSecondary },
     dayTextSelected: { color: theme.colors.primaryDark },
 
-    listContent: { padding: 20 },
+    listContent: { padding: 20, paddingBottom: 100 },
     eventCard: { flexDirection: 'row', marginBottom: 15, padding: 0 },
 
     timeContainer: {

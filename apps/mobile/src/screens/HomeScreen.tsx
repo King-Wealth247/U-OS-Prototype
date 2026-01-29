@@ -149,20 +149,20 @@ export const HomeScreen = ({ navigation, route }: { navigation: any, route: any 
 
             {/* Bottom Navigation */}
             <GlassView style={styles.bottomNav} intensity={80} gradient={false}>
-                <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Map')}>
+                <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Map', { user })}>
                     <Text style={styles.navIcon}>🗺️</Text>
                     <Text style={styles.navLabel}>Map</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.navItem}
-                    onPress={() => handleRestrictedAction('view timetable') && navigation.navigate('Timetable')}
+                    onPress={() => handleRestrictedAction('view timetable') && navigation.navigate('Timetable', { user })}
                 >
                     <Text style={styles.navIcon}>📅</Text>
                     <Text style={styles.navLabel}>Timetable</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.navItem}
-                    onPress={() => handleRestrictedAction('access profile') && navigation.navigate('Profile')}
+                    onPress={() => handleRestrictedAction('access profile') && navigation.navigate('Profile', { user })}
                 >
                     <Text style={styles.navIcon}>👤</Text>
                     <Text style={styles.navLabel}>Profile</Text>
