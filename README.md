@@ -53,13 +53,14 @@ We have pre-configured users for every role.
 
 This project is a **Monorepo** managed by NPM Workspaces.
 
-| Layer | Technology | Description |
-| :--- | :--- | :--- |
-| **Mobile App** | **React Native** (Expo SDK 54) | Cross-platform mobile interface. |
-| **Backend API** | **NestJS** (Node.js) | Robust, scalable REST API. |
-| **Database** | **PostgreSQL** + **PostGIS** | Relational data with geospatial capabilities. |
-| **ORM** | **Prisma** | Type-safe database client. |
-| **Language** | **TypeScript** | Strict typing across the entire stack. |
+| Layer | Technology | Version | Description |
+| :--- | :--- | :--- | :--- |
+| **Mobile App** | **React Native** | 0.76.9 | Cross-platform mobile interface (Expo SDK 52). |
+| **Backend API** | **NestJS** | 10.3.0 | Robust, scalable REST API. |
+| **Database** | **PostgreSQL** | 16 | Relational data engine. |
+| **Geo-Spatial**| **PostGIS** | 3.4 | Advanced mapping & location queries. |
+| **ORM** | **Prisma** | 5.7.1 | Type-safe database client & migrations. |
+| **Language** | **TypeScript** | 5.3+ | Strict typing across the entire stack. |
 
 ---
 
