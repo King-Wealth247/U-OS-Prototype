@@ -1,0 +1,12 @@
+{
+    "extends": "../../node_modules/expo/tsconfig.base",
+    "compilerOptions": {
+        "strict": true,
+        "jsx": "react-native",
+        "lib": [
+            "dom",
+            "esnext"
+        ],
+        "skipLibCheck": true
+    }
+}

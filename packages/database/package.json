@@ -1,0 +1,26 @@
+{
+    "name": "@u-os/database",
+    "version": "0.1.0",
+    "private": true,
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "generate": "prisma generate",
+        "db:push": "prisma db push",
+        "seed": "ts-node seed.ts",
+        "studio": "prisma studio"
+    },
+    "dependencies": {
+        "@prisma/client": "^5.7.1",
+        "@types/bcryptjs": "^2.4.6",
+        "bcryptjs": "^3.0.3"
+    },
+    "devDependencies": {
+        "@faker-js/faker": "^8.3.1",
+        "@types/node": "^20.10.6",
+        "prisma": "^5.7.1",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.3.3"
+    }
+}

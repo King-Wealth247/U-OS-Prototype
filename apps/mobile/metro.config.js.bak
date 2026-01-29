@@ -1,0 +1,24 @@
+const { getDefaultConfig } = require('expo/metro-config');
+const path = require('path');
+
+const projectRoot = __dirname;
+const workspaceRoot = path.resolve(projectRoot, '../..');
+
+const config = getDefaultConfig(projectRoot);
+
+// 1. Add web as a valid extension
+config.resolver.sourceExts = [...config.resolver.sourceExts, 'mjs', 'web.js', 'web.ts', 'web.tsx'];
+
+// 2. Watch all files within the monorepo
+config.watchFolders = [workspaceRoot];
+
+// 3. Let Metro know where to resolve packages
+config.resolver.nodeModulesPaths = [
+    path.resolve(projectRoot, 'node_modules'),
+    path.resolve(workspaceRoot, 'node_modules'),
+];
+
+// 4. Fix resolution for expo-modules-core and other hoisted packages
+config.resolver.disableHierarchicalLookup = true;
+
+module.exports = config;
