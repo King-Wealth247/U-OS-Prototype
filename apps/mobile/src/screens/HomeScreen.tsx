@@ -17,6 +17,8 @@ export const HomeScreen = ({ navigation, route }: { navigation: any, route: any 
     useEffect(() => {
         if (role === 'CASHIER') {
             navigation.replace('Cashier', { user });
+        } else if (role === 'SUPER_ADMIN') {
+            navigation.replace('SuperAdmin', { user });
         }
     }, [role]);
 

@@ -9,13 +9,18 @@ import { AnimatedButton } from '../components/AnimatedButton';
 
 export function SuperAdminDashboard({ navigation }) {
     const [stats, setStats] = useState<any>(null);
+    const [admins, setAdmins] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
     const loadStats = async () => {
         try {
-            const data = await api.admin.getStats();
-            setStats(data);
+            const [statsData, adminsData] = await Promise.all([
+                api.admin.getStats(),
+                api.admin.getAdmins()
+            ]);
+            setStats(statsData);
+            setAdmins(adminsData);
         } catch (error) {
             console.error(error);
         } finally {
@@ -132,7 +137,7 @@ export function SuperAdminDashboard({ navigation }) {
                                     <Text style={styles.actionTitle}>📢 Complaints</Text>
                                     <Text style={styles.actionDesc}>Manage reported issues</Text>
                                 </View>
-                                <AnimatedButton title="Manage" onPress={() => navigation.navigate('Complaints')} style={{ minWidth: 80, paddingVertical: 8 }} textStyle={{ fontSize: 12 }} />
+                                <AnimatedButton title="Manage" onPress={() => navigation.navigate('ComplaintsManager')} style={{ minWidth: 80, paddingVertical: 8 }} textStyle={{ fontSize: 12 }} />
                             </GlassView>
 
                             <GlassView style={styles.actionRow}>
@@ -142,6 +147,46 @@ export function SuperAdminDashboard({ navigation }) {
                                 </View>
                                 <AnimatedButton title="Open" onPress={() => navigation.navigate('StaffManager')} style={{ minWidth: 80, paddingVertical: 8 }} textStyle={{ fontSize: 12 }} />
                             </GlassView>
+                        </View>
+
+                        <Text style={styles.sectionTitle}>Directory</Text>
+                        <View style={[styles.actions, { flexDirection: 'row', paddingBottom: 10 }]}>
+                            <TouchableOpacity
+                                style={{ flex: 1, marginRight: 10 }}
+                                onPress={() => navigation.navigate('UserList', { role: 'LECTURER', title: 'All Teachers' })}
+                            >
+                                <GlassView style={{ alignItems: 'center', padding: 20 }}>
+                                    <Text style={{ fontSize: 30, marginBottom: 10 }}>👨‍🏫</Text>
+                                    <Text style={{ fontWeight: 'bold', color: theme.colors.textPrimary }}>Teachers</Text>
+                                </GlassView>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={{ flex: 1, marginLeft: 10 }}
+                                onPress={() => navigation.navigate('UserList', { role: 'STUDENT', title: 'All Students' })}
+                            >
+                                <GlassView style={{ alignItems: 'center', padding: 20 }}>
+                                    <Text style={{ fontSize: 30, marginBottom: 10 }}>🎓</Text>
+                                    <Text style={{ fontWeight: 'bold', color: theme.colors.textPrimary }}>Students</Text>
+                                </GlassView>
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* System Admins List */}
+                        <Text style={styles.sectionTitle}>System Administrators</Text>
+                        <View style={{ paddingHorizontal: 20, paddingBottom: 40 }}>
+                            {admins.map((admin: any, idx: number) => (
+                                <GlassView key={idx} style={{ marginBottom: 10, padding: 15, flexDirection: 'row', alignItems: 'center' }}>
+                                    <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center', marginRight: 15 }}>
+                                        <Text style={{ fontSize: 20 }}>🛡️</Text>
+                                    </View>
+                                    <View>
+                                        <Text style={{ color: theme.colors.textPrimary, fontWeight: 'bold' }}>{admin.fullName}</Text>
+                                        <Text style={{ color: theme.colors.textSecondary, fontSize: 12 }}>{admin.role.replace('_', ' ')} • {admin.campus?.townName || 'All Campuses'}</Text>
+                                        <Text style={{ color: theme.colors.textMuted, fontSize: 10 }}>{admin.institutionalEmail}</Text>
+                                    </View>
+                                </GlassView>
+                            ))}
                         </View>
                     </>
                 )}

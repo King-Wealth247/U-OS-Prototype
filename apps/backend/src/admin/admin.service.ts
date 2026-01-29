@@ -133,4 +133,47 @@ export class AdminService {
     async deleteStaff(id: string) {
         return this.prisma.staffMember.delete({ where: { id } });
     }
+
+    async getSystemAdmins() {
+        return this.prisma.user.findMany({
+            where: {
+                role: { in: [Role.SUPER_ADMIN, Role.CAMPUS_ADMIN] }
+            },
+            include: {
+                campus: true
+            }
+        });
+    }
+
+    async getAllDepartments() {
+        return this.prisma.department.findMany({
+            orderBy: { name: 'asc' }
+        });
+    }
+
+    async getAllLecturers() {
+        return this.prisma.user.findMany({
+            where: { role: Role.LECTURER },
+            include: {
+                staffMember: true,
+                campus: true
+            },
+            orderBy: { fullName: 'asc' }
+        });
+    }
+
+    async getAllStudents() {
+        // Fetching with enrollments to group by department
+        return this.prisma.user.findMany({
+            where: { role: Role.STUDENT },
+            include: {
+                enrollments: {
+                    include: { department: true }
+                },
+                campus: true
+            },
+            orderBy: { fullName: 'asc' },
+            take: 100 // Safety limit for MVP mobile view. 65k is too many.
+        });
+    }
 }

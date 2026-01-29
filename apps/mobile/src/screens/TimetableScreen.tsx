@@ -8,13 +8,20 @@ import { theme } from '../theme';
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export function TimetableScreen({ navigation }) {
-    const [events, setEvents] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [selectedDay, setSelectedDay] = useState(new Date().getDay());
+    const [mode, setMode] = useState<'MY' | 'SEARCH'>('MY');
+    const [searchDept, setSearchDept] = useState('CE');
+    const [searchLevel, setSearchLevel] = useState(200);
+
+    const DEPARTMENTS = ['CE', 'EE', 'ME', 'CV', 'SE'];
+    const LEVELS = [200, 300, 400, 500];
 
     useEffect(() => {
-        loadSchedule();
-    }, []);
+        if (mode === 'MY') {
+            loadSchedule();
+        } else {
+            handleSearch();
+        }
+    }, [mode]);
 
     const loadSchedule = async () => {
         try {
@@ -23,6 +30,18 @@ export function TimetableScreen({ navigation }) {
             setEvents(data);
         } catch (error) {
             console.error('Failed to load schedule', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSearch = async () => {
+        try {
+            setLoading(true);
+            const data = await api.timetable.getWeeklySchedule(searchDept, searchLevel);
+            setEvents(data);
+        } catch (error) {
+            Alert.alert("Search Failed", "Could not fetch timetable.");
         } finally {
             setLoading(false);
         }
@@ -67,7 +86,55 @@ export function TimetableScreen({ navigation }) {
     return (
         <ScreenBackground>
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>My Timetable</Text>
+                <Text style={styles.headerTitle}>Timetable</Text>
+
+                {/* Mode Toggle */}
+                <View style={styles.toggleContainer}>
+                    <TouchableOpacity
+                        style={[styles.toggleBtn, mode === 'MY' && styles.toggleBtnActive]}
+                        onPress={() => setMode('MY')}
+                    >
+                        <Text style={[styles.toggleText, mode === 'MY' && styles.toggleTextActive]}>My Schedule</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.toggleBtn, mode === 'SEARCH' && styles.toggleBtnActive]}
+                        onPress={() => setMode('SEARCH')}
+                    >
+                        <Text style={[styles.toggleText, mode === 'SEARCH' && styles.toggleTextActive]}>Search</Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* Search Filters */}
+                {mode === 'SEARCH' && (
+                    <GlassView style={styles.filterContainer} intensity={40}>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+                            {DEPARTMENTS.map(dept => (
+                                <TouchableOpacity
+                                    key={dept}
+                                    style={[styles.chip, searchDept === dept && styles.chipActive]}
+                                    onPress={() => { setSearchDept(dept); handleSearch(); }}
+                                >
+                                    <Text style={[styles.chipText, searchDept === dept && styles.chipTextActive]}>{dept}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                        <View style={styles.divider} />
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+                            {LEVELS.map(lvl => (
+                                <TouchableOpacity
+                                    key={lvl}
+                                    style={[styles.chip, searchLevel === lvl && styles.chipActive]}
+                                    onPress={() => { setSearchLevel(lvl); handleSearch(); }}
+                                >
+                                    <Text style={[styles.chipText, searchLevel === lvl && styles.chipTextActive]}>Level {lvl}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                        <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+                            <Text style={styles.searchButtonText}>🔍 Update Results</Text>
+                        </TouchableOpacity>
+                    </GlassView>
+                )}
             </View>
 
             <View style={styles.daySelector}>
@@ -96,7 +163,12 @@ export function TimetableScreen({ navigation }) {
                     contentContainerStyle={styles.listContent}
                     ListEmptyComponent={
                         <View style={styles.emptyState}>
-                            <Text style={styles.emptyText}>No classes scheduled for {WEEKDAYS[selectedDay]}</Text>
+                            <Text style={styles.emptyText}>
+                                {mode === 'MY'
+                                    ? `No classes scheduled for ${WEEKDAYS[selectedDay]}`
+                                    : `No ${searchDept} ${searchLevel} classes on ${WEEKDAYS[selectedDay]}`
+                                }
+                            </Text>
                         </View>
                     }
                 />
@@ -107,7 +179,24 @@ export function TimetableScreen({ navigation }) {
 
 const styles = StyleSheet.create({
     header: { padding: 20, paddingTop: 60, paddingBottom: 10 },
-    headerTitle: { fontSize: 32, fontWeight: 'bold', color: theme.colors.textPrimary },
+    headerTitle: { fontSize: 32, fontWeight: 'bold', color: theme.colors.textPrimary, marginBottom: 15 },
+
+    toggleContainer: { flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: 12, padding: 4, marginBottom: 15 },
+    toggleBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 8 },
+    toggleBtnActive: { backgroundColor: theme.colors.accent },
+    toggleText: { color: theme.colors.textSecondary, fontWeight: '600' },
+    toggleTextActive: { color: '#fff' },
+
+    filterContainer: { padding: 12, borderRadius: 12, gap: 10 },
+    filterScroll: { marginBottom: 8 },
+    divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginVertical: 4 },
+    chip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.1)', marginRight: 8 },
+    chipActive: { backgroundColor: theme.colors.primary },
+    chipText: { color: theme.colors.textSecondary, fontSize: 12 },
+    chipTextActive: { color: '#fff', fontWeight: 'bold' },
+
+    searchButton: { backgroundColor: theme.colors.primary, padding: 10, borderRadius: 8, alignItems: 'center', marginTop: 4 },
+    searchButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
 
     daySelector: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)' },
     dayBtn: {

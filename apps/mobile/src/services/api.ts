@@ -152,6 +152,38 @@ export const api = {
             if (!response.ok) throw new Error('Failed to update status');
             return await response.json();
         },
+        getAdmins: async () => {
+            const response = await fetch(`${API_URL}/admin/admins`, {
+                method: 'GET',
+                headers: await getHeaders(),
+            });
+            if (!response.ok) throw new Error('Failed to fetch admins');
+            return await response.json();
+        },
+        getDepartments: async () => {
+            const response = await fetch(`${API_URL}/admin/departments`, {
+                method: 'GET',
+                headers: await getHeaders(),
+            });
+            if (!response.ok) throw new Error('Failed to fetch departments');
+            return await response.json();
+        },
+        getLecturers: async () => {
+            const response = await fetch(`${API_URL}/admin/lecturers`, {
+                method: 'GET',
+                headers: await getHeaders(),
+            });
+            if (!response.ok) throw new Error('Failed to fetch lecturers');
+            return await response.json();
+        },
+        getStudents: async () => {
+            const response = await fetch(`${API_URL}/admin/students`, {
+                method: 'GET',
+                headers: await getHeaders(),
+            });
+            if (!response.ok) throw new Error('Failed to fetch students');
+            return await response.json();
+        }
     },
     timetable: {
         getMySchedule: async () => {
@@ -159,6 +191,13 @@ export const api = {
                 headers: await getHeaders()
             });
             if (!response.ok) throw new Error('Failed to fetch schedule');
+            return await response.json();
+        },
+        getWeeklySchedule: async (dept: string, level: number) => {
+            const response = await fetch(`${API_URL}/timetable/events?department=${dept}&level=${level}`, {
+                headers: await getHeaders()
+            });
+            if (!response.ok) throw new Error('Failed to fetch weekly schedule');
             return await response.json();
         }
     },

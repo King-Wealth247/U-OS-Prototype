@@ -29,13 +29,11 @@ export class TimetableService {
     }
 
     async getWeeklySchedule(level: number, departmentSlug: string) {
-        // Find courses for this dept/level and get their events
-        return this.prisma.timetableEvent.findMany({
+        // Find courses for this dept and get their events
+        const events = await this.prisma.timetableEvent.findMany({
             where: {
                 course: {
                     departmentSlug: departmentSlug,
-                    // Note: Schema might need 'level' on Course or we infer from code (CSC301 -> 300)
-                    // For now, fetching all dept courses, optimization later
                 }
             },
             include: {
@@ -47,6 +45,15 @@ export class TimetableService {
                 { weekday: 'asc' },
                 { startTime: 'asc' }
             ]
+        });
+
+        // Filter by level heuristic (e.g. Level 300 -> Code starts with '3')
+        if (!level) return events;
+
+        const levelPrefix = level.toString().charAt(0);
+        return events.filter(e => {
+            const codeNum = e.course.code.match(/\d+/);
+            return codeNum ? codeNum[0].startsWith(levelPrefix) : false;
         });
     }
 

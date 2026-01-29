@@ -48,7 +48,7 @@ export const MapScreen = ({ route, navigation }: { route: any, navigation: any }
             {activeLayer === 'outdoor' ? (
                 <MapView
                     ref={mapRef}
-                    provider={PROVIDER_GOOGLE}
+                    // provider={PROVIDER_GOOGLE}  <-- Removed to allow default system map (fixes blank map in Expo Go without API Key)
                     style={styles.map}
                     initialRegion={{
                         latitude: currentCampus.lat,

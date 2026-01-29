@@ -13,6 +13,7 @@ import { SuperAdminDashboard } from './src/screens/SuperAdminDashboard';
 import { ProfileRequestsScreen } from './src/screens/ProfileRequestsScreen';
 import { ComplaintsManagementScreen } from './src/screens/ComplaintsManagementScreen';
 import { StaffManagementScreen } from './src/screens/StaffManagementScreen';
+import { UserListScreen } from './src/screens/UserListScreen';
 import { TimetableScreen } from './src/screens/TimetableScreen';
 import { CourseRegistrationScreen } from './src/screens/CourseRegistrationScreen';
 
@@ -93,6 +94,7 @@ const AuthNavigator = () => {
                     <Stack.Screen name="ProfileRequests" component={ProfileRequestsScreen} options={{ title: '📝 Profile Requests' }} />
                     <Stack.Screen name="ComplaintsManager" component={ComplaintsManagementScreen} options={{ title: '📢 Complaints Manager' }} />
                     <Stack.Screen name="StaffManager" component={StaffManagementScreen} options={{ title: '👥 Staff Management' }} />
+                    <Stack.Screen name="UserList" component={UserListScreen} />
                     <Stack.Screen name="Cashier" component={CashierScreen} options={{ title: '💰 Cashier Portal' }} />
                     <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: '👤 My Profile' }} />
                     <Stack.Screen name="Complaint" component={ComplaintScreen} options={{ title: '📢 Submit Complaint' }} />

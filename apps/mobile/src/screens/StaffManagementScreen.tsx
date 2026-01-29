@@ -19,13 +19,19 @@ export function StaffManagementScreen() {
     const [department, setDepartment] = useState('');
     const [salary, setSalary] = useState('');
 
+    const [departments, setDepartments] = useState([]);
+
     const loadStaff = async () => {
         try {
             setLoading(true);
-            const data = await api.admin.getStaff();
-            setStaff(data);
+            const [staffData, deptData] = await Promise.all([
+                api.admin.getStaff(),
+                api.admin.getDepartments()
+            ]);
+            setStaff(staffData);
+            setDepartments(deptData);
         } catch (error) {
-            Alert.alert('Error', 'Failed to load staff');
+            Alert.alert('Error', 'Failed to load data');
         } finally {
             setLoading(false);
         }
@@ -151,12 +157,20 @@ export function StaffManagementScreen() {
                         ))}
                     </ScrollView>
 
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Department ID"
-                        value={department}
-                        onChangeText={setDepartment}
-                    />
+                    <Text style={styles.label}>Department:</Text>
+                    <ScrollView horizontal style={styles.posScroll} showsHorizontalScrollIndicator={false}>
+                        {departments.map(dept => (
+                            <TouchableOpacity
+                                key={dept.slug}
+                                style={[styles.posOption, department === dept.slug && styles.posSelected]}
+                                onPress={() => setDepartment(dept.slug)}
+                            >
+                                <Text style={[styles.posText, department === dept.slug && styles.posTextSelected]}>
+                                    {dept.name} ({dept.slug.toUpperCase()})
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
 
                     <TextInput
                         style={styles.input}

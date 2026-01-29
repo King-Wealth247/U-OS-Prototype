@@ -63,4 +63,24 @@ export class AdminController {
     async deleteStaff(@Param('id') id: string) {
         return this.adminService.deleteStaff(id);
     }
+
+    @Get('admins')
+    async getAdmins() {
+        return this.adminService.getSystemAdmins();
+    }
+
+    @Get('departments')
+    async getDepartments() {
+        return this.adminService.getAllDepartments();
+    }
+
+    @Get('lecturers')
+    async getLecturers() {
+        return this.adminService.getAllLecturers();
+    }
+
+    @Get('students')
+    async getStudents() {
+        return this.adminService.getAllStudents();
+    }
 }

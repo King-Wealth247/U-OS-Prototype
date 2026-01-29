@@ -182,6 +182,36 @@ export const ProfileScreen = ({ navigation, route }: { navigation: any; route: a
                 </TouchableOpacity>
             </View>
 
+            {/* Logout */}
+            <View style={[styles.section, { marginBottom: 40, backgroundColor: 'transparent', padding: 0 }]}>
+                <TouchableOpacity
+                    style={styles.logoutButton}
+                    onPress={() => {
+                        Alert.alert(
+                            "Log Out",
+                            "Are you sure you want to log out?",
+                            [
+                                { text: "Cancel", style: "cancel" },
+                                {
+                                    text: "Log Out",
+                                    style: "destructive",
+                                    onPress: async () => {
+                                        const { api } = require('../services/api');
+                                        await api.auth.logout();
+                                        // Reset navigation to Login
+                                        navigation.reset({
+                                            index: 0,
+                                            routes: [{ name: 'Login' }],
+                                        });
+                                    }
+                                }
+                            ]
+                        );
+                    }}>
+                    <Text style={styles.logoutButtonText}>🚪 Log Out</Text>
+                </TouchableOpacity>
+            </View>
+
             {/* Password Change Modal */}
             <Modal
                 visible={showPasswordModal}
@@ -459,4 +489,17 @@ const styles = StyleSheet.create({
         color: '#666',
         marginBottom: 20,
     },
+    logoutButton: {
+        backgroundColor: '#fee2e2',
+        padding: 16,
+        borderRadius: 12,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#ef4444',
+    },
+    logoutButtonText: {
+        color: '#dc2626',
+        fontSize: 16,
+        fontWeight: 'bold',
+    }
 });
