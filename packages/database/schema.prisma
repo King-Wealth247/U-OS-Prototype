@@ -52,6 +52,30 @@ enum StaffPosition {
   DRIVER
 }
 
+model Map {
+  id        String @id @default(uuid())
+  campusId  String @map("campus_id")
+  name      String
+  type      String // "outdoor", "indoor", "floor_plan"
+  imageUrl  String @map("image_url") // URL to map image/SVG
+  zoomLevel Int    @default(15) @map("zoom_level")
+  centerLat Float  @map("center_lat")
+  centerLng Float  @map("center_lng")
+  
+  // For indoor maps: floor number and building ID
+  floorId   String? @map("floor_id")
+  buildingId String? @map("building_id")
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  campus    Campus   @relation(fields: [campusId], references: [id], onDelete: Cascade)
+  building  Building? @relation(fields: [buildingId], references: [id], onDelete: SetNull)
+  floor     Floor?   @relation(fields: [floorId], references: [id], onDelete: SetNull)
+
+  @@map("maps")
+}
+
 model Campus {
   id        String @id @default(uuid())
   slug      String @unique
@@ -68,6 +92,7 @@ model Campus {
   buildings    Building[]
   users        User[]
   forcedEvents TimetableEvent[]
+  maps Map[]
 
   @@map("campuses")
 }
@@ -82,6 +107,7 @@ model Building {
 
   campus Campus  @relation(fields: [campusId], references: [id])
   floors Floor[]
+  maps Map[]
 
   @@map("buildings")
 }
@@ -96,6 +122,7 @@ model Floor {
 
   building Building @relation(fields: [buildingId], references: [id])
   rooms    Room[]
+  maps Map[]
 
   @@map("floors")
 }

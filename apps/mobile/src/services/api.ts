@@ -236,6 +236,29 @@ export const api = {
             return await response.json();
         }
     },
+        maps: {
+        getByCampus: async (campusId: string) => {
+            const response = await fetch(`${API_URL}/maps/campus/${campusId}`, {
+                headers: await getHeaders(),
+            });
+            if (!response.ok) throw new Error('Failed to fetch campus maps');
+            return response.json();
+        },
+        getOutdoorMap: async (campusId: string) => {
+            const response = await fetch(`${API_URL}/maps/campus/${campusId}/outdoor`, {
+                headers: await getHeaders(),
+            });
+            if (!response.ok) throw new Error('Failed to fetch outdoor map');
+            return response.json();
+        },
+        getFloorMaps: async (buildingId: string) => {
+            const response = await fetch(`${API_URL}/maps/building/${buildingId}/floors`, {
+                headers: await getHeaders(),
+            });
+            if (!response.ok) throw new Error('Failed to fetch floor maps');
+            return response.json();
+        },
+    },
     timetable: {
         getMySchedule: async () => {
             const response = await fetch(`${API_URL}/timetable/my-schedule`, {

@@ -68,6 +68,51 @@ async function main() {
     }
     console.log(`Created ~120 buildings and ${rooms.length} rooms.`);
 
+    // 2b. Create Maps for each Campus
+    console.log('Seeding Campus Maps...');
+    for (const campus of campuses) {
+        // Outdoor/campus map
+        await prisma.map.upsert({
+            where: { id: `map-outdoor-${campus.id}`.substring(0, 36) }, // Mock unique ID
+            update: {},
+            create: {
+                campusId: campus.id,
+                name: `${campus.townName} Campus Map`,
+                type: 'outdoor',
+                imageUrl: `https://api.mapbox.com/styles/v1/mapbox/light-v11/static/${campus.centerLng},${campus.centerLat},14,0/1200x800@2x?access_token=YOUR_MAPBOX_TOKEN`,
+                zoomLevel: 15,
+                centerLat: campus.centerLat,
+                centerLng: campus.centerLng,
+            }
+        }).catch(() => { /* skip if duplicate */ });
+
+        // Sample floor plan map for first building of each campus
+        const buildingsInCampus = await prisma.building.findMany({ where: { campusId: campus.id }, take: 1 });
+        if (buildingsInCampus.length > 0) {
+            const building = buildingsInCampus[0];
+            const floorsInBuilding = await prisma.floor.findMany({ where: { buildingId: building.id }, take: 1 });
+            if (floorsInBuilding.length > 0) {
+                const floor = floorsInBuilding[0];
+                await prisma.map.upsert({
+                    where: { id: `map-floor-${floor.id}`.substring(0, 36) },
+                    update: {},
+                    create: {
+                        campusId: campus.id,
+                        buildingId: building.id,
+                        floorId: floor.id,
+                        name: `${building.name} - Floor ${floor.floorNumber}`,
+                        type: 'floor_plan',
+                        imageUrl: floor.planImageUrl || `https://via.placeholder.com/800x600?text=Floor+${floor.floorNumber}`,
+                        zoomLevel: 18,
+                        centerLat: campus.centerLat,
+                        centerLng: campus.centerLng,
+                    }
+                }).catch(() => { /* skip if duplicate */ });
+            }
+        }
+    }
+    console.log('Maps seeded.');
+
     // 3. Create Departments & Courses
     console.log('Seeding Departments & Courses...');
     const DEPARTMENTS = [
