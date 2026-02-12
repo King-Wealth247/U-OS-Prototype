@@ -11,11 +11,12 @@ import {
   ScrollView,
   Animated,
 } from "react-native";
-import MapView, {
+import MapView from "../components/NativeMap";
+const {
   PROVIDER_GOOGLE,
   Marker,
   Polyline,
-} from "../components/NativeMap";
+} = require("../components/NativeMap");
 import * as Location from "expo-location";
 import { PinchGestureHandler, State } from "react-native-gesture-handler";
 import { useCampus } from "../context/CampusContext";
@@ -57,6 +58,7 @@ export const MapScreen = ({
   const [floorMaps, setFloorMaps] = useState<MapData[]>([]);
   const [selectedFloorIndex, setSelectedFloorIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
   const scale = useRef(new Animated.Value(1)).current;
   const lastScale = useRef(1);
 
@@ -64,13 +66,16 @@ export const MapScreen = ({
   useEffect(() => {
     const fetchMaps = async () => {
       try {
+        console.log("[MapScreen] Fetching maps for campus:", currentCampus.id);
         setLoading(true);
         const outdoor = await api.maps.getOutdoorMap(currentCampus.id);
+        console.log("[MapScreen] Outdoor map data:", outdoor);
         setOutdoorMap(outdoor);
 
         // Fetch floor maps for the campus (floor_plan type)
         try {
           const floors = await api.maps.getByCampus(currentCampus.id);
+          console.log("[MapScreen] Floor maps data:", floors);
           const floorPlans = (floors || []).filter(
             (m: any) => m.type === "floor_plan",
           );
@@ -78,10 +83,11 @@ export const MapScreen = ({
           // Reset selected index when new floors arrive
           setSelectedFloorIndex(0);
         } catch (err) {
+          console.log("[MapScreen] Floor maps error (non-fatal):", err);
           // non-fatal: just keep floorMaps empty
         }
       } catch (error) {
-        console.error("Failed to fetch maps:", error);
+        console.error("[MapScreen] Failed to fetch maps:", error);
         Alert.alert("Error", "Failed to load campus maps");
       } finally {
         setLoading(false);
@@ -127,34 +133,57 @@ export const MapScreen = ({
   useEffect(() => {
     lastScale.current = 1;
     scale.setValue(1);
+    setImageError(false); // Reset image error when switching floors
   }, [selectedFloorIndex]);
 
   return (
     <View style={styles.container}>
-      {activeLayer === "outdoor" && outdoorMap ? (
-        <MapView
-          ref={mapRef}
-          // provider={PROVIDER_GOOGLE}  <-- Removed to allow default system map (fixes blank map in Expo Go without API Key)
-          style={styles.map}
-          initialRegion={{
-            latitude: outdoorMap.lat,
-            longitude: outdoorMap.lng,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          }}
-          showsUserLocation={true}
-          showsMyLocationButton={false}
-          customMapStyle={mapStyle} // Dark mode map style
-        >
-          <Marker
-            coordinate={{
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading maps...</Text>
+          <Text style={styles.subText}>Campus: {currentCampus.name}</Text>
+        </View>
+      ) : activeLayer === "outdoor" && outdoorMap ? (
+        outdoorMap.imageUrl ? (
+          // Show static map image if imageUrl is provided
+          <View style={styles.mapImageContainer}>
+            <Image
+              source={{ uri: outdoorMap.imageUrl }}
+              style={styles.mapImage}
+              resizeMode="cover"
+            />
+            <View style={styles.mapOverlay}>
+              <Text style={styles.mapTitle}>{outdoorMap.name}</Text>
+              <Text style={styles.mapCoords}>
+                {outdoorMap.lat.toFixed(4)}, {outdoorMap.lng.toFixed(4)}
+              </Text>
+            </View>
+          </View>
+        ) : (
+          // Show interactive MapView if no imageUrl
+          <MapView
+            ref={mapRef}
+            style={styles.map}
+            initialRegion={{
               latitude: outdoorMap.lat,
               longitude: outdoorMap.lng,
+              latitudeDelta: 0.01,
+              longitudeDelta: 0.01,
             }}
-            title={currentCampus.name}
-            description="Main Campus Center"
-          />
-        </MapView>
+            showsUserLocation={true}
+            showsMyLocationButton={false}
+            customMapStyle={mapStyle}
+          >
+            <Marker
+              coordinate={{
+                latitude: outdoorMap.lat,
+                longitude: outdoorMap.lng,
+              }}
+              title={currentCampus.name}
+              description="Main Campus Center"
+            />
+          </MapView>
+        )
       ) : (
         <View style={styles.indoorContainer}>
           {floorMaps.length > 0 ? (
@@ -183,11 +212,21 @@ export const MapScreen = ({
                     }
                   }}
                 >
-                  <Animated.Image
-                    source={{ uri: floorMaps[selectedFloorIndex].imageUrl }}
-                    style={[styles.floorImage, { transform: [{ scale }] }]}
-                    resizeMode="contain"
-                  />
+                  {imageError ? (
+                    <View style={styles.imageErrorContainer}>
+                      <Text style={styles.imageErrorEmoji}>🗺️❌</Text>
+                      <Text style={styles.imageErrorText}>
+                        Sorry, the map is unavailable
+                      </Text>
+                    </View>
+                  ) : (
+                    <Animated.Image
+                      source={{ uri: floorMaps[selectedFloorIndex].imageUrl }}
+                      style={[styles.floorImage, { transform: [{ scale }] }]}
+                      resizeMode="contain"
+                      onError={() => setImageError(true)}
+                    />
+                  )}
                 </PinchGestureHandler>
               </View>
 
@@ -468,6 +507,33 @@ const mapStyle = [
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   map: { width: "100%", height: "100%" },
+  mapImageContainer: {
+    flex: 1,
+    position: "relative",
+  },
+  mapImage: {
+    width: "100%",
+    height: "100%",
+  },
+  mapOverlay: {
+    position: "absolute",
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    padding: 15,
+    borderRadius: 10,
+  },
+  mapTitle: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 5,
+  },
+  mapCoords: {
+    color: "#ccc",
+    fontSize: 12,
+  },
   overlay: {
     position: "absolute",
     top: 60,
@@ -537,6 +603,24 @@ const styles = StyleSheet.create({
   floorImage: {
     width: width - 40,
     height: height - 240,
+  },
+  imageErrorContainer: {
+    width: width - 40,
+    height: height - 240,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(30, 41, 59, 0.8)",
+    borderRadius: 10,
+  },
+  imageErrorEmoji: {
+    fontSize: 48,
+    marginBottom: 15,
+  },
+  imageErrorText: {
+    color: theme.colors.textPrimary,
+    fontSize: 18,
+    fontWeight: "600",
+    textAlign: "center",
   },
   floorControls: {
     padding: 12,

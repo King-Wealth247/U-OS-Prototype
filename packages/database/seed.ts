@@ -6,10 +6,10 @@ const prisma = new PrismaClient();
 const HASHED_PASSWORD = bcrypt.hashSync('password', 10);
 
 const CAMPUSES = [
-    { slug: 'town-a', town: 'Town A', lat: 4.15, lng: 9.24, studentShare: 0.4 },
-    { slug: 'town-b', town: 'Town B', lat: 4.05, lng: 9.70, studentShare: 0.2 },
-    { slug: 'town-c', town: 'Town C', lat: 3.84, lng: 11.50, studentShare: 0.2 },
-    { slug: 'town-d', town: 'Town D', lat: 5.96, lng: 10.15, studentShare: 0.2 },
+    { slug: 'douala', town: 'Douala', lat: 4.0511, lng: 9.7679, studentShare: 0.4 },
+    { slug: 'dschang', town: 'Dschang', lat: 5.4406, lng: 10.0694, studentShare: 0.2 },
+    { slug: 'yaounde', town: 'Yaoundé', lat: 3.8667, lng: 11.5167, studentShare: 0.2 },
+    { slug: 'maroua', town: 'Maroua', lat: 10.5928, lng: 14.3110, studentShare: 0.2 },
 ];
 
 async function main() {
@@ -71,16 +71,22 @@ async function main() {
     // 2b. Create Maps for each Campus
     console.log('Seeding Campus Maps...');
     for (const campus of campuses) {
-        // Outdoor/campus map
+        // Outdoor/campus map using OpenStreetMap (no API key required)
+        const osmMapUrl = `https://tile.openstreetmap.org/cgi-bin/slippymap?lon=${campus.centerLng}&lat=${campus.centerLat}&zoom=14&width=1200&height=800`;
+        // Fallback: use a static map tile service
+        const staticMapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${campus.centerLat},${campus.centerLng}&zoom=14&size=1200x800&style=feature:all|element:labels|visibility:off&key=AIzaSyBkYEsW1ZzQ5Y0jD6tq5Q5C5C5C5C5C5C5`;
+        // Using OpenStreetMap tile URL for reliable rendering
+        const mapUrl = `https://staticmap.openstreetmap.de/staticmap.php?center=${campus.centerLat},${campus.centerLng}&zoom=14&size=1200x800&maptype=mapnik`;
+        
         await prisma.map.upsert({
-            where: { id: `map-outdoor-${campus.id}`.substring(0, 36) }, // Mock unique ID
+            where: { id: `map-outdoor-${campus.id}`.substring(0, 36) },
             update: {},
             create: {
                 campusId: campus.id,
                 name: `${campus.townName} Campus Map`,
                 type: 'outdoor',
-                imageUrl: `https://api.mapbox.com/styles/v1/mapbox/light-v11/static/${campus.centerLng},${campus.centerLat},14,0/1200x800@2x?access_token=YOUR_MAPBOX_TOKEN`,
-                zoomLevel: 15,
+                imageUrl: mapUrl,
+                zoomLevel: 14,
                 centerLat: campus.centerLat,
                 centerLng: campus.centerLng,
             }

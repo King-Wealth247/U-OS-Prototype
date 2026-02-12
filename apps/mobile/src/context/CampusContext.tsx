@@ -3,10 +3,10 @@ import { Alert } from 'react-native';
 
 // Mock Data - In real app, this comes from backend or shared package
 export const CAMPUSES = [
-    { id: 'town-a', name: 'Town A', lat: 4.15, lng: 9.24 },
-    { id: 'town-b', name: 'Town B', lat: 4.16, lng: 9.29 },
-    { id: 'town-c', name: 'Town C', lat: 4.20, lng: 9.20 },
-    { id: 'town-d', name: 'Town D', lat: 4.00, lng: 9.10 },
+    { id: 'douala', name: 'Douala', lat: 4.0511, lng: 9.7679 },
+    { id: 'dschang', name: 'Dschang', lat: 5.4406, lng: 10.0694 },
+    { id: 'yaounde', name: 'Yaoundé', lat: 3.8667, lng: 11.5167 },
+    { id: 'maroua', name: 'Maroua', lat: 10.5928, lng: 14.3110 },
 ];
 
 type Campus = typeof CAMPUSES[0];
