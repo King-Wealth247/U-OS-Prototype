@@ -9,6 +9,8 @@ import { AdminModule } from './admin/admin.module';
 import { TimetableModule } from './timetable/timetable.module';
 import { AcademicModule } from './academic/academic.module';
 import { MapsModule } from './maps/maps.module';
+import { BuildingsModule } from './buildings/buildings.module';
+import { CampusesModule } from './campuses/campuses.module';
 import { PrismaModule } from './prisma.module';
 
 @Module({
@@ -20,7 +22,9 @@ import { PrismaModule } from './prisma.module';
         AdminModule,
         TimetableModule,
         AcademicModule,
-        MapsModule
+        MapsModule,
+        BuildingsModule,
+        CampusesModule
     ],
     controllers: [
         PaymentController,

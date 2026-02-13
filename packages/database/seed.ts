@@ -92,23 +92,26 @@ async function main() {
             }
         }).catch(() => { /* skip if duplicate */ });
 
-        // Sample floor plan map for first building of each campus
-        const buildingsInCampus = await prisma.building.findMany({ where: { campusId: campus.id }, take: 1 });
-        if (buildingsInCampus.length > 0) {
-            const building = buildingsInCampus[0];
-            const floorsInBuilding = await prisma.floor.findMany({ where: { buildingId: building.id }, take: 1 });
-            if (floorsInBuilding.length > 0) {
-                const floor = floorsInBuilding[0];
-                await prisma.map.upsert({
-                    where: { id: `map-floor-${floor.id}`.substring(0, 36) },
-                    update: {},
-                    create: {
+        // Create floor plan maps for ALL buildings and floors
+        const buildingsInCampus = await prisma.building.findMany({ where: { campusId: campus.id } });
+        const floorPlanImages = [
+            'https://raw.githubusercontent.com/mapbox/mapbox-gl-js/main/test/fixtures/floorplan.png',
+            'https://www.conceptdraw.com/How-To-Guide/picture/School-Floor-Plan.png',
+            'https://www.smartdraw.com/floor-plan/img/university-floor-plan.png',
+        ];
+        
+        for (const building of buildingsInCampus) {
+            const floorsInBuilding = await prisma.floor.findMany({ where: { buildingId: building.id } });
+            for (const floor of floorsInBuilding) {
+                const randomImage = floorPlanImages[Math.floor(Math.random() * floorPlanImages.length)];
+                await prisma.map.create({
+                    data: {
                         campusId: campus.id,
                         buildingId: building.id,
                         floorId: floor.id,
                         name: `${building.name} - Floor ${floor.floorNumber}`,
                         type: 'floor_plan',
-                        imageUrl: floor.planImageUrl || `https://via.placeholder.com/800x600?text=Floor+${floor.floorNumber}`,
+                        imageUrl: floor.planImageUrl || randomImage,
                         zoomLevel: 18,
                         centerLat: campus.centerLat,
                         centerLng: campus.centerLng,

@@ -11,12 +11,7 @@ import {
   ScrollView,
   Animated,
 } from "react-native";
-import MapView from "../components/NativeMap";
-const {
-  PROVIDER_GOOGLE,
-  Marker,
-  Polyline,
-} = require("../components/NativeMap");
+import MapView, { PROVIDER_GOOGLE, Marker, Polyline } from "../components/NativeMap";
 import * as Location from "expo-location";
 import { PinchGestureHandler, State } from "react-native-gesture-handler";
 import { useCampus } from "../context/CampusContext";
@@ -31,8 +26,8 @@ interface MapData {
   name: string;
   type: "outdoor" | "indoor" | "floor_plan";
   imageUrl: string;
-  lat: number;
-  lng: number;
+  centerLat: number;
+  centerLng: number;
   zoomLevel: number;
 }
 
@@ -45,7 +40,7 @@ export const MapScreen = ({
 }) => {
   const targetRoom = route.params?.target;
   const { currentCampus } = useCampus();
-  const mapRef = useRef<MapView>(null);
+  const mapRef = useRef<any>(null);
 
   const [activeLayer, setActiveLayer] = useState<"outdoor" | "indoor">(
     "outdoor",
@@ -55,14 +50,17 @@ export const MapScreen = ({
   const [permissionStatus, setPermissionStatus] =
     useState<string>("undetermined");
   const [outdoorMap, setOutdoorMap] = useState<MapData | null>(null);
-  const [floorMaps, setFloorMaps] = useState<MapData[]>([]);
-  const [selectedFloorIndex, setSelectedFloorIndex] = useState(0);
+  const [buildings, setBuildings] = useState<any[]>([]);
+  const [selectedBuilding, setSelectedBuilding] = useState<any>(null);
+  const [floors, setFloors] = useState<any[]>([]);
+  const [selectedFloor, setSelectedFloor] = useState<any>(null);
+  const [floorMap, setFloorMap] = useState<MapData | null>(null);
   const [loading, setLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
   const scale = useRef(new Animated.Value(1)).current;
   const lastScale = useRef(1);
 
-  // Fetch maps from database
+  // Fetch maps and buildings from database
   useEffect(() => {
     const fetchMaps = async () => {
       try {
@@ -72,19 +70,13 @@ export const MapScreen = ({
         console.log("[MapScreen] Outdoor map data:", outdoor);
         setOutdoorMap(outdoor);
 
-        // Fetch floor maps for the campus (floor_plan type)
+        // Fetch buildings for the campus
         try {
-          const floors = await api.maps.getByCampus(currentCampus.id);
-          console.log("[MapScreen] Floor maps data:", floors);
-          const floorPlans = (floors || []).filter(
-            (m: any) => m.type === "floor_plan",
-          );
-          setFloorMaps(floorPlans);
-          // Reset selected index when new floors arrive
-          setSelectedFloorIndex(0);
+          const buildingsData = await api.maps.getBuildingsByCampus(currentCampus.id);
+          console.log("[MapScreen] Buildings data:", buildingsData);
+          setBuildings(buildingsData || []);
         } catch (err) {
-          console.log("[MapScreen] Floor maps error (non-fatal):", err);
-          // non-fatal: just keep floorMaps empty
+          console.log("[MapScreen] Buildings error (non-fatal):", err);
         }
       } catch (error) {
         console.error("[MapScreen] Failed to fetch maps:", error);
@@ -95,6 +87,11 @@ export const MapScreen = ({
     };
 
     fetchMaps();
+    // Reset selections when campus changes
+    setSelectedBuilding(null);
+    setSelectedFloor(null);
+    setFloors([]);
+    setFloorMap(null);
   }, [currentCampus.id]);
 
   useEffect(() => {
@@ -119,8 +116,8 @@ export const MapScreen = ({
     if (mapRef.current && outdoorMap) {
       mapRef.current.animateToRegion(
         {
-          latitude: outdoorMap.lat,
-          longitude: outdoorMap.lng,
+          latitude: outdoorMap.centerLat,
+          longitude: outdoorMap.centerLng,
           latitudeDelta: 0.01,
           longitudeDelta: 0.01,
         },
@@ -129,12 +126,38 @@ export const MapScreen = ({
     }
   }, [outdoorMap, currentCampus]);
 
-  // Reset zoom when switching floors
+  // Fetch floors when building is selected
   useEffect(() => {
+    if (!selectedBuilding) return;
+    const fetchFloors = async () => {
+      try {
+        const floorsData = await api.maps.getFloorsByBuilding(selectedBuilding.id);
+        setFloors(floorsData || []);
+      } catch (err) {
+        console.log("[MapScreen] Floors error:", err);
+        setFloors([]);
+      }
+    };
+    fetchFloors();
+  }, [selectedBuilding]);
+
+  // Fetch floor map when floor is selected
+  useEffect(() => {
+    if (!selectedFloor) return;
+    const fetchFloorMap = async () => {
+      try {
+        const mapData = await api.maps.getFloorMap(selectedFloor.id);
+        setFloorMap(mapData);
+      } catch (err) {
+        console.log("[MapScreen] Floor map error:", err);
+        setFloorMap(null);
+      }
+    };
+    fetchFloorMap();
     lastScale.current = 1;
     scale.setValue(1);
-    setImageError(false); // Reset image error when switching floors
-  }, [selectedFloorIndex]);
+    setImageError(false);
+  }, [selectedFloor]);
 
   return (
     <View style={styles.container}>
@@ -155,7 +178,7 @@ export const MapScreen = ({
             <View style={styles.mapOverlay}>
               <Text style={styles.mapTitle}>{outdoorMap.name}</Text>
               <Text style={styles.mapCoords}>
-                {outdoorMap.lat.toFixed(4)}, {outdoorMap.lng.toFixed(4)}
+                {outdoorMap.centerLat.toFixed(4)}, {outdoorMap.centerLng.toFixed(4)}
               </Text>
             </View>
           </View>
@@ -165,8 +188,8 @@ export const MapScreen = ({
             ref={mapRef}
             style={styles.map}
             initialRegion={{
-              latitude: outdoorMap.lat,
-              longitude: outdoorMap.lng,
+              latitude: outdoorMap.centerLat,
+              longitude: outdoorMap.centerLng,
               latitudeDelta: 0.01,
               longitudeDelta: 0.01,
             }}
@@ -176,8 +199,8 @@ export const MapScreen = ({
           >
             <Marker
               coordinate={{
-                latitude: outdoorMap.lat,
-                longitude: outdoorMap.lng,
+                latitude: outdoorMap.centerLat,
+                longitude: outdoorMap.centerLng,
               }}
               title={currentCampus.name}
               description="Main Campus Center"
@@ -186,92 +209,131 @@ export const MapScreen = ({
         )
       ) : (
         <View style={styles.indoorContainer}>
-          {floorMaps.length > 0 ? (
+          {!selectedBuilding ? (
+            // Building Selection View
+            buildings.length > 0 ? (
+              <ScrollView style={styles.listContainer}>
+                <Text style={styles.sectionTitle}>Select a Building</Text>
+                {buildings.map((building) => (
+                  <TouchableOpacity
+                    key={building.id}
+                    style={styles.buildingCard}
+                    onPress={() => setSelectedBuilding(building)}
+                  >
+                    <Text style={styles.buildingName}>{building.name}</Text>
+                    <Text style={styles.buildingCode}>{building.shortCode}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            ) : (
+              <View style={styles.indoorParam}>
+                <Text style={styles.indoorText}>🏢 No Buildings Available</Text>
+                <Text style={styles.subText}>Buildings for {currentCampus.name}</Text>
+              </View>
+            )
+          ) : !selectedFloor ? (
+            // Floor Selection View
             <View style={{ flex: 1 }}>
-              <View
-                style={{
-                  flex: 1,
-                  alignItems: "center",
-                  justifyContent: "center",
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => {
+                  setSelectedBuilding(null);
+                  setFloors([]);
                 }}
               >
-                <PinchGestureHandler
-                  onGestureEvent={Animated.event(
-                    [{ nativeEvent: { scale: scale } }],
-                    {
-                      useNativeDriver: true,
-                    },
-                  )}
-                  onHandlerStateChange={(event) => {
-                    if (event.nativeEvent.oldState === State.ACTIVE) {
-                      lastScale.current =
-                        lastScale.current * event.nativeEvent.scale;
-                      if (lastScale.current < 1) lastScale.current = 1;
-                      if (lastScale.current > 4) lastScale.current = 4;
-                      scale.setValue(lastScale.current);
-                    }
-                  }}
-                >
-                  {imageError ? (
-                    <View style={styles.imageErrorContainer}>
-                      <Text style={styles.imageErrorEmoji}>🗺️❌</Text>
-                      <Text style={styles.imageErrorText}>
-                        Sorry, the map is unavailable
+                <Text style={styles.backButtonText}>← Back to Buildings</Text>
+              </TouchableOpacity>
+              {floors.length > 0 ? (
+                <ScrollView style={styles.listContainer}>
+                  <Text style={styles.sectionTitle}>
+                    {selectedBuilding.name} - Select Floor
+                  </Text>
+                  {floors.map((floor) => (
+                    <TouchableOpacity
+                      key={floor.id}
+                      style={styles.floorCard}
+                      onPress={() => setSelectedFloor(floor)}
+                    >
+                      <Text style={styles.floorName}>
+                        Floor {floor.floorNumber}
                       </Text>
-                    </View>
-                  ) : (
-                    <Animated.Image
-                      source={{ uri: floorMaps[selectedFloorIndex].imageUrl }}
-                      style={[styles.floorImage, { transform: [{ scale }] }]}
-                      resizeMode="contain"
-                      onError={() => setImageError(true)}
-                    />
-                  )}
-                </PinchGestureHandler>
-              </View>
-
-              <View style={styles.floorControls}>
-                <Text style={styles.floorLabel}>
-                  {floorMaps[selectedFloorIndex].name}
-                </Text>
-                <View style={{ flexDirection: "row" }}>
-                  <TouchableOpacity
-                    style={[
-                      styles.floorBtn,
-                      selectedFloorIndex === 0 && styles.disabledBtn,
-                    ]}
-                    onPress={() =>
-                      setSelectedFloorIndex((i) => Math.max(0, i - 1))
-                    }
-                    disabled={selectedFloorIndex === 0}
-                  >
-                    <Text style={styles.floorBtnText}>◀ Prev</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.floorBtn,
-                      selectedFloorIndex === floorMaps.length - 1 &&
-                        styles.disabledBtn,
-                    ]}
-                    onPress={() =>
-                      setSelectedFloorIndex((i) =>
-                        Math.min(floorMaps.length - 1, i + 1),
-                      )
-                    }
-                    disabled={selectedFloorIndex === floorMaps.length - 1}
-                  >
-                    <Text style={styles.floorBtnText}>Next ▶</Text>
-                  </TouchableOpacity>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              ) : (
+                <View style={styles.indoorParam}>
+                  <Text style={styles.indoorText}>📍 No Floors Available</Text>
+                  <Text style={styles.subText}>
+                    Floors for {selectedBuilding.name}
+                  </Text>
                 </View>
-              </View>
+              )}
             </View>
           ) : (
-            <View style={styles.indoorParam}>
-              <Text style={styles.indoorText}>🏢 Indoor Maps Coming Soon</Text>
-              <Text style={styles.subText}>
-                Floor plans for {currentCampus.name}
-              </Text>
+            // Floor Map View
+            <View style={{ flex: 1 }}>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => {
+                  setSelectedFloor(null);
+                  setFloorMap(null);
+                }}
+              >
+                <Text style={styles.backButtonText}>← Back to Floors</Text>
+              </TouchableOpacity>
+              {floorMap ? (
+                <View style={{ flex: 1 }}>
+                  <View
+                    style={{
+                      flex: 1,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <PinchGestureHandler
+                      onGestureEvent={Animated.event(
+                        [{ nativeEvent: { scale: scale } }],
+                        { useNativeDriver: true }
+                      )}
+                      onHandlerStateChange={(event) => {
+                        if (event.nativeEvent.oldState === State.ACTIVE) {
+                          lastScale.current =
+                            lastScale.current * event.nativeEvent.scale;
+                          if (lastScale.current < 1) lastScale.current = 1;
+                          if (lastScale.current > 4) lastScale.current = 4;
+                          scale.setValue(lastScale.current);
+                        }
+                      }}
+                    >
+                      {imageError ? (
+                        <View style={styles.imageErrorContainer}>
+                          <Text style={styles.imageErrorEmoji}>🗺️❌</Text>
+                          <Text style={styles.imageErrorText}>
+                            Sorry, the map is unavailable
+                          </Text>
+                        </View>
+                      ) : (
+                        <Animated.Image
+                          source={{ uri: floorMap.imageUrl }}
+                          style={[styles.floorImage, { transform: [{ scale }] }]}
+                          resizeMode="contain"
+                          onError={() => setImageError(true)}
+                        />
+                      )}
+                    </PinchGestureHandler>
+                  </View>
+                  <View style={styles.floorControls}>
+                    <Text style={styles.floorLabel}>{floorMap.name}</Text>
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.indoorParam}>
+                  <Text style={styles.indoorText}>🗺️ Map Not Available</Text>
+                  <Text style={styles.subText}>
+                    Floor {selectedFloor.floorNumber} - {selectedBuilding.name}
+                  </Text>
+                </View>
+              )}
             </View>
           )}
         </View>
@@ -648,6 +710,57 @@ const styles = StyleSheet.create({
   },
   disabledBtn: {
     opacity: 0.4,
+  },
+  listContainer: {
+    flex: 1,
+    padding: 20,
+    paddingTop: 140,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: theme.colors.textPrimary,
+    marginBottom: 20,
+  },
+  buildingCard: {
+    backgroundColor: "rgba(59, 130, 246, 0.1)",
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "rgba(59, 130, 246, 0.3)",
+  },
+  buildingName: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: theme.colors.textPrimary,
+    marginBottom: 4,
+  },
+  buildingCode: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+  },
+  floorCard: {
+    backgroundColor: "rgba(59, 130, 246, 0.1)",
+    borderRadius: 12,
+    padding: 18,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "rgba(59, 130, 246, 0.3)",
+  },
+  floorName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: theme.colors.textPrimary,
+  },
+  backButton: {
+    padding: 16,
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
+  },
+  backButtonText: {
+    color: theme.colors.textPrimary,
+    fontSize: 16,
+    fontWeight: "600",
   },
   indoorText: {
     fontSize: 24,

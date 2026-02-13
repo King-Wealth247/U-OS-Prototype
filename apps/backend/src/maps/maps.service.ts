@@ -52,6 +52,22 @@ export class MapsService {
         return maps;
     }
 
+    async getFloorMap(floorId: string) {
+        const map = await this.prisma.map.findFirst({
+            where: { floorId, type: 'floor_plan' },
+            include: {
+                floor: { select: { floorNumber: true } },
+                building: { select: { name: true, shortCode: true } }
+            }
+        });
+
+        if (!map) {
+            throw new NotFoundException(`No map found for floor ${floorId}`);
+        }
+
+        return map;
+    }
+
     async getMap(mapId: string) {
         const map = await this.prisma.map.findUnique({
             where: { id: mapId },

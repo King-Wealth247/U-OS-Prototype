@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
-import { useCampus, CAMPUSES } from '../context/CampusContext';
+import { useCampus } from '../context/CampusContext';
 
 export const CampusSwitchScreen = ({ navigation }: { navigation: any }) => {
-    const { currentCampus, switchCampus, detectBestCampus, isAutoDetected } = useCampus();
+    const { currentCampus, campuses, switchCampus, detectBestCampus, isAutoDetected } = useCampus();
 
     const handleSelect = (id: string) => {
         switchCampus(id);
@@ -27,7 +27,7 @@ export const CampusSwitchScreen = ({ navigation }: { navigation: any }) => {
             <Text style={styles.subtitle}>Available Campuses</Text>
 
             <FlatList
-                data={CAMPUSES}
+                data={campuses}
                 keyExtractor={item => item.id}
                 renderItem={({ item }) => (
                     <TouchableOpacity

@@ -342,6 +342,27 @@ export const api = {
                 ];
             }
         },
+        getBuildingsByCampus: async (campusId: string) => {
+            const response = await fetch(`${API_URL}/buildings/campus/${campusId}`, {
+                headers: await getHeaders(),
+            });
+            if (!response.ok) throw new Error('Failed to fetch buildings');
+            return response.json();
+        },
+        getFloorsByBuilding: async (buildingId: string) => {
+            const response = await fetch(`${API_URL}/buildings/${buildingId}/floors`, {
+                headers: await getHeaders(),
+            });
+            if (!response.ok) throw new Error('Failed to fetch floors');
+            return response.json();
+        },
+        getFloorMap: async (floorId: string) => {
+            const response = await fetch(`${API_URL}/maps/floor/${floorId}`, {
+                headers: await getHeaders(),
+            });
+            if (!response.ok) throw new Error('Failed to fetch floor map');
+            return response.json();
+        },
     },
     timetable: {
         getMySchedule: async () => {
@@ -398,6 +419,13 @@ export const api = {
             }
 
             return await response.json();
+        }
+    },
+    campuses: {
+        getAll: async () => {
+            const response = await fetch(`${API_URL}/campuses`);
+            if (!response.ok) throw new Error('Failed to fetch campuses');
+            return response.json();
         }
     }
 };

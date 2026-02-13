@@ -22,6 +22,11 @@ export class MapsController {
         return this.mapsService.getFloorMaps(buildingId);
     }
 
+    @Get('floor/:floorId')
+    async getFloorMap(@Param('floorId') floorId: string) {
+        return this.mapsService.getFloorMap(floorId);
+    }
+
     @Get(':mapId')
     async getMap(@Param('mapId') mapId: string) {
         return this.mapsService.getMap(mapId);
